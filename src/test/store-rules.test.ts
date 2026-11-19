@@ -3,6 +3,7 @@ import { normalizeLocalPhone, toE164 } from "@/lib/phone";
 import { validateReceipt, MAX_RECEIPT_BYTES } from "@/lib/receipts";
 import { isValidWhatsapp, isValidPlayerId, normalizeTrackQuery, orderCodeFromId, toTrackStatus } from "@/lib/orders";
 import { formatPrice } from "@/lib/format";
+import { loyaltyProgress, pointsForOrder, TOPUP_CODE_POINTS } from "@/lib/loyalty";
 
 describe("store rules", () => {
   it("accepts Sudanese phone numbers and converts them to +249", () => {
@@ -48,5 +49,20 @@ describe("order tracking", () => {
     expect(toTrackStatus("confirmed")).toBe("completed");
     expect(toTrackStatus("completed")).toBe("completed");
     expect(toTrackStatus("rejected")).toBe("rejected");
+  });
+});
+
+describe("loyalty points", () => {
+  it("earns 1 point per full 1,000 SDG of a completed order", () => {
+    expect(pointsForOrder(10000)).toBe(10);
+    expect(pointsForOrder(2999)).toBe(2);
+    expect(pointsForOrder(999)).toBe(0);
+  });
+
+  it("needs 100 points for a top-up code", () => {
+    expect(TOPUP_CODE_POINTS).toBe(100);
+    expect(loyaltyProgress(40)).toMatchObject({ remaining: 60, percent: 40, reached: false });
+    expect(loyaltyProgress(100).reached).toBe(true);
+    expect(loyaltyProgress(250).percent).toBe(100);
   });
 });

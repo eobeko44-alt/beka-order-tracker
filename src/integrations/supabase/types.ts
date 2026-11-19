@@ -55,6 +55,7 @@ export type Database = {
           payer_account: string | null
           payment_method_id: string
           player_id: string
+          points_awarded: number
           receipt_path: string | null
           reviewed_at: string | null
           status: string
@@ -71,6 +72,7 @@ export type Database = {
           payer_account?: string | null
           payment_method_id: string
           player_id: string
+          points_awarded?: number
           receipt_path?: string | null
           reviewed_at?: string | null
           status?: string
@@ -87,6 +89,7 @@ export type Database = {
           payer_account?: string | null
           payment_method_id?: string
           player_id?: string
+          points_awarded?: number
           receipt_path?: string | null
           reviewed_at?: string | null
           status?: string
@@ -418,6 +421,7 @@ export type Database = {
         Returns: boolean
       }
       is_owner: { Args: never; Returns: boolean }
+      loyalty_points_for: { Args: { p_amount_sdg: number }; Returns: number }
       place_wallet_order: {
         Args: {
           p_customer_name: string

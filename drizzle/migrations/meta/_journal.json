@@ -22,6 +22,13 @@
       "when": 1795067506639,
       "tag": "0002_order_tracking_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795086754300,
+      "tag": "0003_loyalty_points_on_completed_orders",
+      "breakpoints": true
     }
   ]
 }

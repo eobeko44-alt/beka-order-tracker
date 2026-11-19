@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { LogIn, Plus, Star, Wallet } from 'lucide-react';
 import TopUpModal from '@/components/wallet/TopUpModal';
 import { Link } from '@tanstack/react-router';
-import { formatPrice } from '@/lib/format';
+import { buildWhatsAppUrl, formatPrice } from '@/lib/format';
+import { loyaltyProgress, SDG_PER_POINT } from '@/lib/loyalty';
 import type { UserProfile } from '@/types';
 
 interface WalletCardProps {
@@ -15,6 +16,7 @@ const actionClass =
 
 export default function WalletCard({ profile, onTopUpSubmitted }: WalletCardProps) {
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
+  const loyalty = loyaltyProgress(profile?.points ?? 0);
 
   return (
     <section className="relative w-full overflow-hidden rounded-3xl border border-brand-500/30 bg-gradient-to-br from-brand-700 via-brand-600 to-electric-600 p-5 text-white shadow-2xl shadow-brand-700/30 animate-fade-up sm:p-8">
@@ -51,6 +53,30 @@ export default function WalletCard({ profile, onTopUpSubmitted }: WalletCardProp
               <p dir="ltr" className="text-end text-2xl font-extrabold tracking-tight sm:text-3xl">
                 {(profile?.points ?? 0).toLocaleString('en-US')}
               </p>
+              <div
+                role="progressbar"
+                aria-label="التقدّم نحو كود الشحن"
+                aria-valuemin={0}
+                aria-valuemax={loyalty.target}
+                aria-valuenow={Math.min(loyalty.points, loyalty.target)}
+                className="h-1.5 overflow-hidden rounded-full bg-white/15"
+              >
+                <span className="block h-full rounded-full bg-star transition-[width] duration-500" style={{ width: `${loyalty.percent}%` }} />
+              </div>
+              {loyalty.reached ? (
+                <a
+                  href={buildWhatsAppUrl(`مرحباً، جمعت ${loyalty.points} نقطة وعايز أستلم كود الشحن.`)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-bold text-star underline-offset-2 hover:underline"
+                >
+                  وصلت {loyalty.target} نقطة! اطلب كود الشحن
+                </a>
+              ) : (
+                <p className="text-xs leading-snug text-white/70">
+                  {loyalty.points}/{loyalty.target} لكود شحن · نقطة لكل {SDG_PER_POINT.toLocaleString('en-US')} ج.س
+                </p>
+              )}
             </div>
           </div>
 
