@@ -53,10 +53,10 @@ describe("order tracking", () => {
 });
 
 describe("loyalty points", () => {
-  it("earns 1 point per full 1,000 SDG of a completed order", () => {
-    expect(pointsForOrder(10000)).toBe(10);
-    expect(pointsForOrder(2999)).toBe(2);
-    expect(pointsForOrder(999)).toBe(0);
+  it("earns 1 point per full 2,000 SDG of a completed order", () => {
+    expect(pointsForOrder(10000)).toBe(5);
+    expect(pointsForOrder(3999)).toBe(1);
+    expect(pointsForOrder(1999)).toBe(0);
   });
 
   it("needs 100 points for a top-up code", () => {

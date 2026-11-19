@@ -29,6 +29,20 @@
       "when": 1795086754300,
       "tag": "0003_loyalty_points_on_completed_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795086904929,
+      "tag": "0004_loyalty_points_rate_2000",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795086960372,
+      "tag": "0005_tighten_table_permissions",
+      "breakpoints": true
     }
   ]
 }

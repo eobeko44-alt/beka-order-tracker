@@ -2,7 +2,7 @@
 // these values mirror it for display. Change both together.
 
 /** SDG of a completed order that earn one loyalty point. */
-export const SDG_PER_POINT = 1000;
+export const SDG_PER_POINT = 2000;
 
 /** Points a customer needs to earn a top-up code. */
 export const TOPUP_CODE_POINTS = 100;
