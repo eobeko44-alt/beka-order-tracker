@@ -1,8 +1,6 @@
-import logoAsset from '@/assets/beka-store-logo.jpg.asset.json';
-
 export const STORE_NAME = 'بيكا ستور BEKA STORE';
 
-export const STORE_LOGO_URL = logoAsset.url;
+export const STORE_LOGO_URL = '/favicon.png';
 
 export const STORE_WHATSAPP_NUMBER = '249114071454';
 
