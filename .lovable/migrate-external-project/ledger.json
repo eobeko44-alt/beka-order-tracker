@@ -40,8 +40,8 @@
       "capability": "authorization",
       "source": "user_roles + is_owner() + owner_email_allowlist",
       "outcome": "migrate",
-      "status": "pending",
-      "next_action": "Owner email must be added to owner_email_allowlist in this new database"
+      "status": "migrate_done_unverified",
+      "next_action": "Owner email added to allowlist; owner sign-in not exercised yet"
     },
     {
       "capability": "storage:receipts_bucket",
