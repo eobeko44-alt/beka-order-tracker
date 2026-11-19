@@ -28,3 +28,16 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+
+- Store pages live in `src/views/*` and are mounted by thin route files in `src/routes/*`; keep routing in TanStack routes (old `#/path` links are redirected in `__root.tsx`).
+- The public catalog loads through the `getCatalog` server function (`src/lib/catalog.functions.ts`) + `catalogQueryOptions`, so SSR works without a session.
+- Signed-in data (orders, top-ups, profiles, admin) is read from the browser client and protected by RLS; owner access comes only from `public.user_roles` via `is_owner()`, never from profile fields.
+- Order prices are set by the `orders_set_amount` database trigger and money moves only inside `review_order` / `review_topup` / `place_wallet_order` (only wallet-paid orders deduct balance); never compute or write amounts or balances from the client.
+- Receipt images go to the private `receipts` bucket and are shown to owners with short-lived signed URLs.
+- Component styling was ported from the original store and uses the `brand-*`, `electric-*` and `surface` tokens defined in `src/styles.css`; add new colors there, not inline.
+- Store owners are granted automatically from the private `owner_email_allowlist` table (trigger on confirmed auth users); add admin emails there instead of hand-inserting roles, so access applies whenever that account signs up.
+- Home-page reviews load through the `getPublicReviews` server function (published rows only, returns empty on failure); customers review only via the `submit_review` database function (own completed order, once, starts pending), while owners publish/hide/add reviews directly under RLS — keeps fake or unapproved reviews off the public page.
+- Phone sign-in has no SMS: `startPhoneLogin` creates a 6-digit code the customer sends to the store on WhatsApp, an owner approves it in the admin "طلبات الدخول" tab (`review_phone_login`), and `checkPhoneLogin` then returns a one-time magic-link token for an internal `@phone.beka-store.app` account — the owner check of the sender's number is what proves phone ownership, so never auto-approve.
+- Public order tracking (`/track`) goes only through the `track_orders` database function (order number = first 8 chars of the order id, or player ID; returns status/game/package/dates only, max 10 rows); guests still have no direct read on `orders`, and the checkout creates the order id client-side so guests see their order number.

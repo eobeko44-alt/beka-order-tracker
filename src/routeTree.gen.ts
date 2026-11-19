@@ -10,33 +10,115 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
+import { Route as BekoAdmin2026RouteImport } from './routes/beko-admin-2026'
+import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as OrdersRouteImport } from './routes/orders'
+import { Route as TrackRouteImport } from './routes/track'
+import { Route as GameGameIdRouteImport } from './routes/game.$gameId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BekoAdmin2026Route = BekoAdmin2026RouteImport.update({
+  id: '/beko-admin-2026',
+  path: '/beko-admin-2026',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritesRoute = FavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrackRoute = TrackRouteImport.update({
+  id: '/track',
+  path: '/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GameGameIdRoute = GameGameIdRouteImport.update({
+  id: '/game/$gameId',
+  path: '/game/$gameId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/beko-admin-2026': typeof BekoAdmin2026Route
+  '/favorites': typeof FavoritesRoute
+  '/orders': typeof OrdersRoute
+  '/track': typeof TrackRoute
+  '/game/$gameId': typeof GameGameIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/beko-admin-2026': typeof BekoAdmin2026Route
+  '/favorites': typeof FavoritesRoute
+  '/orders': typeof OrdersRoute
+  '/track': typeof TrackRoute
+  '/game/$gameId': typeof GameGameIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/beko-admin-2026': typeof BekoAdmin2026Route
+  '/favorites': typeof FavoritesRoute
+  '/orders': typeof OrdersRoute
+  '/track': typeof TrackRoute
+  '/game/$gameId': typeof GameGameIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/account'
+    | '/beko-admin-2026'
+    | '/favorites'
+    | '/orders'
+    | '/track'
+    | '/game/$gameId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/account'
+    | '/beko-admin-2026'
+    | '/favorites'
+    | '/orders'
+    | '/track'
+    | '/game/$gameId'
+  id:
+    | '__root__'
+    | '/'
+    | '/account'
+    | '/beko-admin-2026'
+    | '/favorites'
+    | '/orders'
+    | '/track'
+    | '/game/$gameId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
+  BekoAdmin2026Route: typeof BekoAdmin2026Route
+  FavoritesRoute: typeof FavoritesRoute
+  OrdersRoute: typeof OrdersRoute
+  TrackRoute: typeof TrackRoute
+  GameGameIdRoute: typeof GameGameIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +130,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/beko-admin-2026': {
+      id: '/beko-admin-2026'
+      path: '/beko-admin-2026'
+      fullPath: '/beko-admin-2026'
+      preLoaderRoute: typeof BekoAdmin2026RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorites': {
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/track': {
+      id: '/track'
+      path: '/track'
+      fullPath: '/track'
+      preLoaderRoute: typeof TrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/game/$gameId': {
+      id: '/game/$gameId'
+      path: '/game/$gameId'
+      fullPath: '/game/$gameId'
+      preLoaderRoute: typeof GameGameIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
+  BekoAdmin2026Route: BekoAdmin2026Route,
+  FavoritesRoute: FavoritesRoute,
+  OrdersRoute: OrdersRoute,
+  TrackRoute: TrackRoute,
+  GameGameIdRoute: GameGameIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

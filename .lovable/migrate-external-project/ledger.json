@@ -1,0 +1,124 @@
+{
+  "source": "code-archive (seamless-project-migration-main_1.zip — Beka Store, Lovable TanStack + Cloud project)",
+  "capabilities": [
+    {
+      "capability": "code",
+      "source": "TanStack Start app: home, game, orders, account, favorites, admin (beko-admin-2026)",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "Home, game, account and admin pages load"
+    },
+    {
+      "capability": "schema",
+      "source": "drizzle/migrations 0000-0005 (games, packages, payment_methods, profiles, user_roles, orders, topups, owner_email_allowlist, reviews, RPCs, triggers) — re-applied in this project as 3 migrations incl. track_orders",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "Applied to the new Lovable Cloud database"
+    },
+    {
+      "capability": "records:catalog",
+      "source": "seed rows inside migrations",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "14 active packages visible to guests"
+    },
+    {
+      "capability": "records:orders_topups_profiles_reviews",
+      "source": "old Cloud project (no export attached)",
+      "outcome": "migrate",
+      "status": "pending",
+      "next_action": "Request CSV/JSON exports after preview"
+    },
+    {
+      "capability": "auth_identities",
+      "source": "old Cloud auth users (no export attached)",
+      "outcome": "migrate",
+      "status": "pending",
+      "next_action": "Request users export (id, email, phone)"
+    },
+    {
+      "capability": "authorization",
+      "source": "user_roles + is_owner() + owner_email_allowlist",
+      "outcome": "migrate",
+      "status": "pending",
+      "next_action": "Owner email must be added to owner_email_allowlist in this new database"
+    },
+    {
+      "capability": "storage:receipts_bucket",
+      "source": "private receipts bucket",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "Guest receipt upload exercised in checkout test"
+    },
+    {
+      "capability": "storage:receipt_file_bytes",
+      "source": "old receipts objects",
+      "outcome": "migrate",
+      "status": "pending",
+      "next_action": "Request files if needed"
+    },
+    {
+      "capability": "auth:google",
+      "source": "lovable managed Google OAuth",
+      "outcome": "migrate",
+      "status": "migrate_done_unverified",
+      "next_action": "Managed Google enabled; real sign-in not exercised"
+    },
+    {
+      "capability": "auth:email_password",
+      "source": "signUp / signInWithPassword",
+      "outcome": "migrate",
+      "status": "migrate_done_unverified",
+      "next_action": "Enabled with email confirmation"
+    },
+    {
+      "capability": "auth:phone_whatsapp",
+      "source": "SMS removed; WhatsApp code + owner approval",
+      "outcome": "replace",
+      "status": "verified",
+      "next_action": "Customer sign-in after owner approval verified in preview"
+    },
+    {
+      "capability": "asset:logo",
+      "source": "beka-store-logo.jpg asset pointer from old project",
+      "outcome": "migrate",
+      "status": "verified",
+      "next_action": "Logo re-hosted in this project again"
+    },
+    {
+      "capability": "public_endpoints / webhooks / schedules",
+      "source": "check cron-auth.ts / src/routes/api",
+      "outcome": "none",
+      "status": "verified",
+      "next_action": "None found"
+    },
+    {
+      "capability": "secrets",
+      "source": "none user-owned",
+      "outcome": "replace",
+      "status": "verified",
+      "next_action": "None needed"
+    },
+    {
+      "capability": "cutover",
+      "source": "old project URL",
+      "outcome": "pending",
+      "status": "pending",
+      "next_action": "Publish and share new URL"
+    },
+    {
+      "capability": "verification",
+      "source": "-",
+      "outcome": "verify",
+      "status": "partial",
+      "next_action": "Guest order price trigger, signed-in account and admin verified"
+    },
+    {
+      "capability": "feature:order_tracking",
+      "source": "new request",
+      "outcome": "add",
+      "status": "verified",
+      "next_action": "Guest checkout shows order number; /track shows pending/shipped/rejected by code or player ID"
+    }
+  ]
+}

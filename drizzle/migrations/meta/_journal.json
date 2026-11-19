@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1795067419054,
+      "tag": "0000_beka_store_core",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795067467106,
+      "tag": "0001_beka_store_receipts_wallet_owners_reviews_phone",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795067506639,
+      "tag": "0002_order_tracking_lookup",
+      "breakpoints": true
+    }
+  ]
+}
