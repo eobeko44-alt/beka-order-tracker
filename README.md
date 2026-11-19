@@ -1,14 +1,16 @@
-# Welcome to your Lovable project
+# Beka Order Tracker
+
+هذا ملف مشروعي "بيكا ستور" (Beka Store). أريدك أن تقرأ الملفات وتفهم المشروع تماماً وتعديل تتبع فوري لحالة الطلب برقم الطلب أو ID اللاعب: يقدر العميل يدخل رقم الطلب أو ID يشوف هل هو قيد المراجعة، تم الشحن، أو مرفوض بدون ما يراسلك يسأل عن حالته.
 
 This project was built with [Lovable](https://lovable.dev).
 
 ## Build with Lovable
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/9844573d-8fea-44c2-8a75-e819c795d18c).
 
 - **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
 ## Development
 
@@ -20,10 +22,3 @@ cd <repository-name>
 npm i
 npm run dev
 ```
-
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
