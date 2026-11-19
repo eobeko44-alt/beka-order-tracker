@@ -1,11 +1,13 @@
 import { supabase } from '@/lib/supabase';
-import { lovable } from '@/integrations/lovable/index';
 
 export async function signInWithGoogle(): Promise<void> {
-  const result = await lovable.auth.signInWithOAuth('google', {
-    redirect_uri: window.location.origin,
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/account`,
+    },
   });
-  if (result.error) throw result.error;
+  if (error) throw error;
 }
 
 /** Finishes a WhatsApp phone sign-in once the store has approved the request. */
