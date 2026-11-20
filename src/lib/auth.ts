@@ -1,13 +1,20 @@
 import { supabase } from '@/lib/supabase';
-import { lovable } from '@/integrations/lovable/index';
 
+/**
+ * Google sign-in straight through the auth server, so it also works on Vercel.
+ * Needs the store's own Google client ID/secret saved in the Google sign-in settings,
+ * and the site address allowed as a redirect URL.
+ */
 export async function signInWithGoogle(): Promise<void> {
-  const result = await lovable.auth.signInWithOAuth('google', {
-    redirect_uri: window.location.origin,
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin,
+      queryParams: { prompt: 'select_account' },
+    },
   });
 
-  if (result.error) throw result.error;
-  // When redirected, the browser is leaving for Google; otherwise the session is already set.
+  if (error) throw error;
 }
 
 /** Finishes a WhatsApp phone sign-in once the store has approved the request. */
