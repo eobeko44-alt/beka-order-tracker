@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
+import { getSupabaseConfig } from '@/integrations/supabase/env';
 import type { PublicReviews } from '@/types';
 
 const SHOWN_REVIEWS = 12;
@@ -8,8 +9,8 @@ const SHOWN_REVIEWS = 12;
 /** Published customer reviews for the home page, plus the overall rating summary. */
 export const getPublicReviews = createServerFn({ method: 'GET' }).handler(
   async (): Promise<PublicReviews> => {
-    const key = process.env['SUPABASE_PUBLISHABLE_KEY']!;
-    const db = createClient<Database>(process.env['SUPABASE_URL']!, key, {
+    const { url, key } = getSupabaseConfig();
+    const db = createClient<Database>(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
       global: {
         fetch: (input, init) => {

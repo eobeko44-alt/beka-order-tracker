@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { authRedirectUrl } from '@/lib/config';
 
 /**
  * Google sign-in straight through the auth server, so it also works on Vercel.
@@ -9,7 +10,7 @@ export async function signInWithGoogle(): Promise<void> {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: window.location.origin,
+      redirectTo: authRedirectUrl(),
       queryParams: { prompt: 'select_account' },
     },
   });
