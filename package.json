@@ -1,5 +1,4 @@
 {
-  "name": "tanstack_start_ts",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -15,7 +14,7 @@
   },
   "overrides": {
     "rolldown": "1.2.1",
-    "shell-quote": ">=1.11.0"
+    "shell-quote": "^1.11.0"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -62,7 +61,7 @@
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.71.2",
-    "react-resizable-panels": "^4.6.5",
+    "react-resizable-panels": "^4.8.5",
     "recharts": "^2.15.4",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
@@ -74,7 +73,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-stack-config": "2.27.2",
+    "@lovable.dev/vite-tanstack-stack-config": "^2.27.2",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
     "@types/node": "^22.16.5",
@@ -90,12 +89,12 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "jsdom": "^26.0.0",
-    "nitro": "3.0.260603-beta",
+    "nitro": "^2.10.4",
     "postgres": "^3.4.5",
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.36.1",
-    "vite": "8.0.1-beta.5",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.0.0",
     "vitest": "^4.1.10"
   }
 }
