@@ -1,4 +1,4 @@
-import { supabase } from "../../supabase/client";
+import { supabase } from "../supabase/client";
 
 export type AuthProvider = "google" | "apple" | "github" | "azure" | string;
 
@@ -20,8 +20,8 @@ export const lovable = {
             typeof supabase.auth.signInWithOAuth
           >[0]["provider"],
           options: {
-            redirectTo,
-            queryParams: opts?.extraParams,
+            ...(redirectTo ? { redirectTo } : {}),
+            ...(opts?.extraParams ? { queryParams: opts.extraParams } : {}),
           },
         });
 
