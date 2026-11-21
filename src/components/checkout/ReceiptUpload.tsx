@@ -22,17 +22,21 @@ export default function ReceiptUpload({ file, error, onChange }: ReceiptUploadPr
   }, [file]);
 
   return (
-    <div className="flex flex-col gap-2">
-      <span className="text-sm font-semibold text-zinc-200">صورة إشعار التحويل</span>
+    <div className="flex flex-col gap-2.5">
+      <span className="text-sm font-bold text-zinc-100 sm:text-base">صورة إشعار التحويل</span>
 
       {previewUrl ? (
-        <div className="relative overflow-hidden rounded-xl border border-zinc-700 bg-zinc-950">
-          <img src={previewUrl} alt="معاينة الإشعار" className="max-h-64 w-full object-contain" />
+        <div className="relative overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 p-2">
+          <img
+            src={previewUrl}
+            alt="إشعار التحويل"
+            className="max-h-72 w-full rounded-xl object-contain"
+          />
           <button
             type="button"
             onClick={() => onChange(null)}
             aria-label="إزالة الصورة"
-            className="absolute end-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-zinc-950/80 text-zinc-100 transition-colors hover:bg-red-500"
+            className="absolute end-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-zinc-950/85 text-zinc-200 ring-1 ring-white/15 transition hover:bg-zinc-900 hover:text-white"
           >
             <X className="h-4 w-4" />
           </button>
@@ -40,15 +44,21 @@ export default function ReceiptUpload({ file, error, onChange }: ReceiptUploadPr
       ) : (
         <label
           htmlFor={inputId}
-          className={`flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed p-6 text-center transition-colors duration-200 hover:border-brand-500 hover:bg-brand-500/5 ${
-            error ? 'border-red-500/60' : 'border-zinc-700'
+          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-5 py-7 text-center transition-colors sm:py-8 ${
+            error
+              ? 'border-red-500/70 bg-red-500/5 hover:border-red-400'
+              : 'border-zinc-700 bg-zinc-950/60 hover:border-brand-400 hover:bg-zinc-950'
           }`}
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800 text-brand-300">
-            <ImagePlus className="h-6 w-6" />
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-800/90 text-brand-300 ring-1 ring-white/10">
+            <ImagePlus className="h-7 w-7" />
           </span>
-          <span className="text-sm font-semibold text-zinc-200">اضغط لرفع صورة الإشعار</span>
-          <span className="text-xs text-zinc-500">JPG أو PNG أو WebP، حتى 5 ميجابايت</span>
+          <span className="text-sm font-extrabold text-zinc-100 sm:text-base">
+            اضغط لرفع صورة الإشعار
+          </span>
+          <span className="text-xs text-zinc-400 sm:text-sm">
+            JPG أو PNG أو WebP حتى 5 ميجابايت
+          </span>
         </label>
       )}
 
@@ -63,7 +73,7 @@ export default function ReceiptUpload({ file, error, onChange }: ReceiptUploadPr
         }}
       />
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm font-medium text-red-400">{error}</p>}
     </div>
   );
 }
