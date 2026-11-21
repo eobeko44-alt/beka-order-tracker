@@ -23,11 +23,13 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-extrabold text-brand-300">404</h1>
         <h2 className="mt-4 text-xl font-bold text-foreground">الصفحة دي ما موجودة</h2>
-        <p className="mt-2 text-sm text-muted-foreground">ربما اتشالت أو الرابط غلط.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          ربما اتشالت أو الرابط غلط.
+        </p>
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition-colors hover:bg-brand-500"
+            className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground"
           >
             العودة إلى الرئيسية
           </Link>
@@ -57,13 +59,13 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition-colors hover:bg-brand-500"
+            className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground"
           >
             إعادة المحاولة
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-xl border border-input px-5 py-3 text-sm font-bold text-foreground transition-colors hover:bg-accent"
+            className="inline-flex items-center justify-center rounded-xl border border-input bg-background px-5 py-2 text-sm font-semibold text-foreground"
           >
             العودة إلى الرئيسية
           </a>
@@ -78,11 +80,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: STORE_NAME },
+      { title: "بيكا ستور | BEKA STORE" },
       {
         name: "description",
         content:
-          "بيكا ستور BEKA STORE - اشحن ألعابك المفضلة بسهولة: ببجي موبايل، فري فاير، يلا لودو وفيزا أمريكية.",
+          "بيكا ستور BEKA STORE لشحن الألعاب والرصيد بسرعة وأمان مع تتبع فوري للطلبات.",
       },
       { property: "og:site_name", content: STORE_NAME },
       { property: "og:type", content: "website" },
