@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogIn, Plus, Star, Wallet } from 'lucide-react';
+import { Plus, Star, Wallet } from 'lucide-react';
 import TopUpModal from '@/components/wallet/TopUpModal';
 import { Link } from '@tanstack/react-router';
 import { buildWhatsAppUrl, formatPrice } from '@/lib/format';
@@ -12,7 +12,12 @@ interface WalletCardProps {
 }
 
 const actionClass =
-  'inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-white px-5 py-4 text-[0.95rem] font-extrabold text-brand-950 shadow-lg transition hover:bg-brand-50 active:scale-[0.99]';
+  'inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-2xl bg-white px-5 py-4 text-[0.95rem] font-extrabold shadow-lg transition hover:opacity-95 active:scale-[0.99]';
+
+const actionStyle = {
+  backgroundColor: '#ffffff',
+  color: '#1e1b4b',
+} as const;
 
 export default function WalletCard({ profile, onTopUpSubmitted }: WalletCardProps) {
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
@@ -34,9 +39,9 @@ export default function WalletCard({ profile, onTopUpSubmitted }: WalletCardProp
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
-          <div className="grid flex-1 grid-cols-2 gap-3 sm:gap-4">
-            <div className="flex flex-col gap-2 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm sm:p-5">
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="flex flex-col justify-between gap-2 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm sm:p-5">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-white/80">
                 <Wallet className="h-4 w-4" />
                 رصيدك
@@ -46,57 +51,65 @@ export default function WalletCard({ profile, onTopUpSubmitted }: WalletCardProp
               </p>
             </div>
 
-            <div className="flex flex-col gap-2 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm sm:p-5">
-              <span className="inline-flex items-center gap-2 text-sm font-semibold text-white/80">
-                <Star className="h-4 w-4" />
-                نقاطك
-              </span>
-              <p dir="ltr" className="text-end text-2xl font-extrabold tracking-tight sm:text-3xl">
-                {(profile?.points ?? 0).toLocaleString('en-US')}
-              </p>
+            <div className="flex flex-col justify-between gap-2 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-sm sm:p-5">
+              <div className="flex flex-col gap-2">
+                <span className="inline-flex items-center gap-2 text-sm font-semibold text-white/80">
+                  <Star className="h-4 w-4" />
+                  نقاطك
+                </span>
+                <p dir="ltr" className="text-end text-2xl font-extrabold tracking-tight sm:text-3xl">
+                  {(profile?.points ?? 0).toLocaleString('en-US')}
+                </p>
+              </div>
+
+              <div className="mt-1 flex flex-col gap-1.5">
+                <div
+                  role="progressbar"
+                  aria-label="التقدم نحو كود الشحن"
+                  aria-valuemin={0}
+                  aria-valuemax={loyalty.target}
+                  aria-valuenow={Math.min(loyalty.points, loyalty.target)}
+                  className="h-1.5 overflow-hidden rounded-full bg-white/15"
+                >
+                  <span
+                    className="block h-full rounded-full bg-star transition-[width] duration-500"
+                    style={{ width: `${loyalty.percent}%` }}
+                  />
+                </div>
+
+                {loyalty.reached ? (
+                  <a
+                    href={buildWhatsAppUrl(`مرحباً جمعت ${loyalty.points} نقطة وعايز أستلم كود الشحن`)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[11px] font-bold text-star underline-offset-2 hover:underline"
+                  >
+                    وصلت {loyalty.target} نقطة! اطلب كود الشحن
+                  </a>
+                ) : (
+                  <p className="text-[11px] leading-snug text-white/80">
+                    {loyalty.points}/{loyalty.target} نقطة = كود شحن · 1 نقطة لكل {SDG_PER_POINT.toLocaleString('en-US')} ج.س
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-
-          <div
-            role="progressbar"
-            aria-label="التقدم نحو كود الشحن"
-            aria-valuemin={0}
-            aria-valuemax={loyalty.target}
-            aria-valuenow={Math.min(loyalty.points, loyalty.target)}
-            className="h-1.5 overflow-hidden rounded-full bg-white/15"
-          >
-            <span
-              className="block h-full rounded-full bg-star transition-[width] duration-500"
-              style={{ width: `${loyalty.percent}%` }}
-            />
-          </div>
-
-          {loyalty.reached ? (
-            <a
-              href={buildWhatsAppUrl(`مرحباً جمعت ${loyalty.points} نقطة وعايز أستلم كود الشحن`)}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs font-bold text-star underline-offset-2 hover:underline"
-            >
-              وصلت {loyalty.target} نقطة! اطلب كود الشحن
-            </a>
-          ) : (
-            <p className="text-xs leading-snug text-white/70">
-              {loyalty.points}/{loyalty.target} نقطة = كود شحن · 1 نقطة لكل {SDG_PER_POINT.toLocaleString('en-US')} ج.س
-            </p>
-          )}
         </div>
 
-        <div className="flex lg:items-center">
+        <div className="flex">
           {profile ? (
-            <button type="button" onClick={() => setIsTopUpOpen(true)} className={actionClass}>
-              <Plus className="h-5 w-5" />
-              اشحن محفظتي
+            <button
+              type="button"
+              onClick={() => setIsTopUpOpen(true)}
+              className={actionClass}
+              style={actionStyle}
+            >
+              <Plus className="h-5 w-5" style={{ color: '#1e1b4b' }} />
+              <span style={{ color: '#1e1b4b' }}>اشحن محفظتي</span>
             </button>
           ) : (
-            <Link to="/account" className={actionClass}>
-              <LogIn className="h-5 w-5" />
-              سجل دخولك عشان تشحن محفظتك
+            <Link to="/account" className={actionClass} style={actionStyle}>
+              <span style={{ color: '#1e1b4b' }}>سجل دخولك عشان تشحن محفظتك</span>
             </Link>
           )}
         </div>
