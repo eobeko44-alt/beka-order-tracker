@@ -67,8 +67,8 @@ export default function CheckoutModal({ game, pkg, paymentMethods, onClose }: Ch
     } catch {
       setSubmitError(
         navigator.onLine
-          ? 'ما قدرنا نحفظ طلبك الآن، جرّب تاني بعد شوية.'
-          : 'الإنترنت مقطوع عندك، اتأكد من الشبكة وجرّب تاني.'
+          ? 'ما قدرنا نحفظ طلبك الآن. جرّب تاني بعد شوية.'
+          : 'الإنترنت مقطوع عندك. اتأكد من الشبكة وجرّب تاني.'
       );
     } finally {
       setIsSubmitting(false);
@@ -89,7 +89,7 @@ export default function CheckoutModal({ game, pkg, paymentMethods, onClose }: Ch
       setSubmitError(
         error instanceof Error && error.message.includes('INSUFFICIENT_BALANCE')
           ? 'رصيد محفظتك ما بكفي لهذا الطلب.'
-          : 'ما قدرنا نحفظ طلبك الآن، جرّب تاني بعد شوية.'
+          : 'ما قدرنا نحفظ طلبك الآن. جرّب تاني بعد شوية.'
       );
     } finally {
       setIsSubmitting(false);
@@ -110,7 +110,7 @@ export default function CheckoutModal({ game, pkg, paymentMethods, onClose }: Ch
         role="dialog"
         aria-modal="true"
         aria-label={`شحن ${game.name_ar}`}
-        className="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-zinc-800 bg-zinc-900 shadow-2xl sm:max-w-lg sm:rounded-3xl animate-fade-up"
+        className="relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-zinc-800 bg-zinc-900 text-zinc-100 shadow-2xl sm:max-w-lg sm:rounded-3xl"
       >
         <div className="flex items-start justify-between gap-4 border-b border-zinc-800 p-5 sm:p-6">
           <div className="min-w-0">
@@ -138,7 +138,7 @@ export default function CheckoutModal({ game, pkg, paymentMethods, onClose }: Ch
             onClick={onClose}
             disabled={isSubmitting}
             aria-label="إغلاق"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-40"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-50"
           >
             <X className="h-5 w-5" />
           </button>
@@ -154,6 +154,7 @@ export default function CheckoutModal({ game, pkg, paymentMethods, onClose }: Ch
               }}
             />
           )}
+
           {step === 'payment' && (
             <PaymentMethodStep
               methods={paymentMethods}
@@ -167,24 +168,36 @@ export default function CheckoutModal({ game, pkg, paymentMethods, onClose }: Ch
               }}
             />
           )}
+
           {step === 'transfer' && paymentMethodId === WALLET_METHOD_ID && (
             <div className="flex flex-col gap-4">
               <h2 className="text-lg font-bold text-zinc-50">تأكيد الدفع من المحفظة</h2>
               <p className="text-sm text-zinc-400">
-                هيتم خصم {formatPrice(pkg.price_sdg)} من رصيدك الآن. لو اترفض الطلب، المبلغ برجع لمحفظتك.
+                هيتم خصم {formatPrice(pkg.price_sdg)} من رصيدك الآن. لو اترفض الطلب، المبلغ بيرجع لمحفظتك.
               </p>
               {submitError && <p className="text-sm text-red-400">{submitError}</p>}
               <div className="flex items-center justify-between">
-                <button type="button" onClick={() => setStep('payment')} disabled={isSubmitting} className="rounded-xl border border-zinc-800 px-5 py-3 text-sm font-semibold text-zinc-300">
+                <button
+                  type="button"
+                  onClick={() => setStep('payment')}
+                  disabled={isSubmitting}
+                  className="rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition-colors hover:bg-zinc-800 disabled:opacity-50"
+                >
                   السابق
                 </button>
-                <button type="button" onClick={handleWalletPay} disabled={isSubmitting} className="rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white hover:bg-brand-500 disabled:opacity-50">
+                <button
+                  type="button"
+                  onClick={handleWalletPay}
+                  disabled={isSubmitting}
+                  className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-500 disabled:opacity-50"
+                >
                   {isSubmitting ? 'جاري الدفع...' : 'ادفع من المحفظة'}
                 </button>
               </div>
             </div>
           )}
-          {step === 'transfer' && paymentMethod && (
+
+          {step === 'transfer' && paymentMethod && paymentMethod.id !== WALLET_METHOD_ID && (
             <TransferStep
               method={paymentMethod}
               amountLabel={formatPrice(pkg.price_sdg)}
@@ -194,6 +207,7 @@ export default function CheckoutModal({ game, pkg, paymentMethods, onClose }: Ch
               onSubmit={handleSubmit}
             />
           )}
+
           {step === 'done' && player && (
             <SuccessStep
               gameName={game.name_ar}
