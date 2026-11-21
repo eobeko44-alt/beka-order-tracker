@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { CheckCircle2, Loader2, ShieldCheck, Sparkles, X } from 'lucide-react';
 import ReceiptUpload from '@/components/checkout/ReceiptUpload';
 import { buildWhatsAppUrl, formatPrice } from '@/lib/format';
@@ -102,8 +103,11 @@ export default function TopUpModal({ userId, userName, onClose, onSubmitted }: T
   const inputClass =
     'w-full rounded-2xl border border-zinc-700 bg-zinc-950 px-4 py-4 text-base font-semibold text-zinc-50 placeholder:font-normal placeholder:text-zinc-500 outline-none transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-500/35';
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center sm:p-5">
+  const modalContent = (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 9999 }}
+      className="flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center sm:p-5"
+    >
       <button
         type="button"
         aria-label="إغلاق"
@@ -114,13 +118,13 @@ export default function TopUpModal({ userId, userName, onClose, onSubmitted }: T
         role="dialog"
         aria-modal="true"
         aria-label="اشحن محفظتك"
-        className="relative flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-3xl border border-zinc-800 bg-zinc-900 shadow-2xl animate-fade-up sm:max-w-xl sm:rounded-3xl"
+        className="relative flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-3xl border border-brand-500/30 bg-zinc-900 shadow-2xl animate-fade-up sm:max-w-2xl sm:rounded-3xl"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-zinc-800 bg-zinc-950/50 px-5 py-5 sm:px-7 sm:py-6">
+        <div className="flex items-start justify-between gap-4 border-b border-zinc-800 bg-zinc-950/60 px-5 py-5 sm:px-7 sm:py-6">
           <div className="flex flex-col gap-1">
             <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-500/15 px-3 py-1 text-xs font-extrabold text-brand-300 ring-1 ring-brand-500/30">
               <Sparkles className="h-3.5 w-3.5" />
-              شحن المحفظة
+              لوحة شحن المحفظة
             </span>
             <h2 className="mt-1 text-xl font-extrabold text-zinc-50 sm:text-2xl">أضف رصيداً لمحفظتك</h2>
             <p className="text-xs text-zinc-400 sm:text-sm">اختر طريقة التحويل وأدخل المبلغ وبيانات الإشعار</p>
@@ -273,6 +277,9 @@ export default function TopUpModal({ userId, userName, onClose, onSubmitted }: T
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return modalContent;
+  return createPortal(modalContent, document.body);
 }
 
 function TopUpSuccess({ name, amount, onClose }: { name: string; amount: number; onClose: () => void }) {
