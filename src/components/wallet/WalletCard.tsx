@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Login, Plus, Star, Wallet } from 'lucide-react';
+import { LogIn, Plus, Star, Wallet } from 'lucide-react';
 import TopUpModal from '@/components/wallet/TopUpModal';
 import { Link } from '@tanstack/react-router';
 import { buildWhatsAppUrl, formatPrice } from '@/lib/format';
@@ -95,7 +95,7 @@ export default function WalletCard({ profile, onTopUpSubmitted }: WalletCardProp
             </button>
           ) : (
             <Link to="/account" className={actionClass}>
-              <Login className="h-5 w-5" />
+              <LogIn className="h-5 w-5" />
               سجل دخولك عشان تشحن محفظتك
             </Link>
           )}
