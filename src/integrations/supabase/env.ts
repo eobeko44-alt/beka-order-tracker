@@ -42,7 +42,18 @@ export function normalizeSupabaseKey(value: string): string {
   return value.replace(/^sb_(publishable|secret)_/i, (prefix) => prefix.toLowerCase());
 }
 
+/** The store owner's own project; used whenever the anon key is set but no usable URL is. */
+export const OWN_SUPABASE_URL = 'https://mbohrdrbhcylylkdkogx.supabase.co';
+
 export function getSupabaseConfig(): { url: string; key: string } {
+  const anonKey = firstDefined(['VITE_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY']);
+  if (anonKey) {
+    // Own-project mode (Vercel): VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY, never the built-in backend.
+    const ownUrl = firstDefined(['VITE_SUPABASE_URL', 'SUPABASE_URL']);
+    const url = ownUrl && /\.supabase\.co\/?$/i.test(ownUrl) ? ownUrl : OWN_SUPABASE_URL;
+    return { url: normalizeSupabaseUrl(url), key: normalizeSupabaseKey(anonKey) };
+  }
+
   const url = firstDefined(URL_KEYS);
   const key = firstDefined(PUBLIC_KEY_KEYS);
 
