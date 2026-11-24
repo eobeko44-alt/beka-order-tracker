@@ -140,7 +140,8 @@ export default function PhoneSignIn({ onBack }: PhoneSignInProps) {
       setPending(next);
       setNow(Date.now());
     } catch (err) {
-      setError(describeAuthError(err));
+      const detail = err instanceof Error ? err.message : String(err);
+      setError(`${describeAuthError(err)} — ${detail}`);
     } finally {
       setIsBusy(false);
     }
