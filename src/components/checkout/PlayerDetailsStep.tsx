@@ -32,6 +32,11 @@ function isClashOfClans(gameName?: string, gameSlug?: string): boolean {
   );
 }
 
+function isVisaCard(gameName?: string, gameSlug?: string): boolean {
+  const combined = `${gameName ?? ''} ${gameSlug ?? ''}`.toLowerCase();
+  return combined.includes('visa') || combined.includes('فيزا');
+}
+
 function isValidSupercellEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 }
@@ -43,31 +48,42 @@ export default function PlayerDetailsStep({
   gameSlug,
 }: PlayerDetailsStepProps) {
   const isClash = isClashOfClans(gameName, gameSlug);
+  const isVisa = !isClash && isVisaCard(gameName, gameSlug);
 
   const [customerName, setCustomerName] = useState(initial?.customerName ?? '');
-  const [playerId, setPlayerId] = useState(initial?.playerId ?? '');
+  const [playerId, setPlayerId] = useState(
+    initial?.playerId && initial.playerId !== 'VISA-CARD' ? initial.playerId : ''
+  );
   const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ?? '');
   const [errors, setErrors] = useState<{ customerName?: string; playerId?: string; whatsapp?: string }>({});
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const normalizedName = customerName.trim();
-    const normalizedIdentifier = isClash
-      ? playerId.trim().toLowerCase()
-      : normalizePlayerId(playerId);
     const normalizedPhone = normalizeWhatsapp(whatsapp);
+
+    let normalizedIdentifier = '';
+    if (isVisa) {
+      normalizedIdentifier = 'VISA-CARD';
+    } else if (isClash) {
+      normalizedIdentifier = playerId.trim().toLowerCase();
+    } else {
+      normalizedIdentifier = normalizePlayerId(playerId);
+    }
 
     const nextErrors: typeof errors = {};
     if (normalizedName.length < 2 || normalizedName.length > 80) {
       nextErrors.customerName = 'اكتب اسمك (من حرفين لحد 80 حرف)';
     }
 
-    if (isClash) {
-      if (!isValidSupercellEmail(normalizedIdentifier)) {
-        nextErrors.playerId = 'أدخل إيميل سوبرسل صحيح، مثال: name@gmail.com';
+    if (!isVisa) {
+      if (isClash) {
+        if (!isValidSupercellEmail(normalizedIdentifier)) {
+          nextErrors.playerId = 'أدخل إيميل سوبرسل صحيح، مثال: name@gmail.com';
+        }
+      } else if (!isValidPlayerId(normalizedIdentifier)) {
+        nextErrors.playerId = 'أدخل ID اللاعب (من 3 إلى 50 حرفاً أو رقماً)';
       }
-    } else if (!isValidPlayerId(normalizedIdentifier)) {
-      nextErrors.playerId = 'أدخل ID اللاعب (من 3 إلى 50 حرفاً أو رقماً)';
     }
 
     if (!isValidWhatsapp(normalizedPhone)) {
@@ -89,9 +105,11 @@ export default function PlayerDetailsStep({
       <div>
         <h2 className="text-lg font-bold text-zinc-50">بياناتك</h2>
         <p className="mt-1 text-sm text-zinc-400">
-          {isClash
-            ? 'اكتب اسمك وإيميل سوبرسل ورقم واتساب للتواصل معك'
-            : 'اكتب اسمك وID اللاعب ورقم واتساب للتواصل معك'}
+          {isVisa
+            ? 'اكتب اسمك ورقم واتساب للتواصل معك'
+            : isClash
+              ? 'اكتب اسمك وإيميل سوبرسل ورقم واتساب للتواصل معك'
+              : 'اكتب اسمك وID اللاعب ورقم واتساب للتواصل معك'}
         </p>
       </div>
 
@@ -114,26 +132,28 @@ export default function PlayerDetailsStep({
         {errors.customerName && <p className="text-sm text-red-400">{errors.customerName}</p>}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="player-id" className="text-sm font-semibold text-zinc-200">
-          {isClash ? 'إيميل سوبرسل' : 'ID اللاعب'}
-        </label>
-        <input
-          id="player-id"
-          type={isClash ? 'email' : 'text'}
-          dir="ltr"
-          inputMode={isClash ? 'email' : 'numeric'}
-          autoComplete={isClash ? 'email' : undefined}
-          value={playerId}
-          onChange={(event) => setPlayerId(event.target.value)}
-          placeholder={isClash ? 'example@gmail.com' : 'مثال: 5123456789'}
-          aria-invalid={Boolean(errors.playerId)}
-          className={`${INPUT_CLASS} text-start ${
-            errors.playerId ? 'border-red-500 focus:border-red-500' : 'border-zinc-700 focus:border-brand-500'
-          }`}
-        />
-        {errors.playerId && <p className="text-sm text-red-400">{errors.playerId}</p>}
-      </div>
+      {!isVisa && (
+        <div className="flex flex-col gap-2">
+          <label htmlFor="player-id" className="text-sm font-semibold text-zinc-200">
+            {isClash ? 'إيميل سوبرسل' : 'ID اللاعب'}
+          </label>
+          <input
+            id="player-id"
+            type={isClash ? 'email' : 'text'}
+            dir="ltr"
+            inputMode={isClash ? 'email' : 'numeric'}
+            autoComplete={isClash ? 'email' : undefined}
+            value={playerId}
+            onChange={(event) => setPlayerId(event.target.value)}
+            placeholder={isClash ? 'example@gmail.com' : 'مثال: 5123456789'}
+            aria-invalid={Boolean(errors.playerId)}
+            className={`${INPUT_CLASS} text-start ${
+              errors.playerId ? 'border-red-500 focus:border-red-500' : 'border-zinc-700 focus:border-brand-500'
+            }`}
+          />
+          {errors.playerId && <p className="text-sm text-red-400">{errors.playerId}</p>}
+        </div>
+      )}
 
       <div className="flex flex-col gap-2">
         <label htmlFor="whatsapp" className="text-sm font-semibold text-zinc-200">
@@ -157,9 +177,15 @@ export default function PlayerDetailsStep({
 
       <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3.5 text-xs leading-6 text-zinc-400">
         <p className="font-semibold text-zinc-200">شروط وتنبيهات الطلب:</p>
-        {isClash ? (
+        {isVisa ? (
           <ul className="mt-1 list-disc space-y-1 pr-4">
-            <li>تأكد من كتابة إيميل Supercell المرتبط بالقريه بشكل صحيح.</li>
+            <li>تأكد من كتابة اسمك ورقم واتساب بشكل صحيح لاستلام تفاصيل البطاقة.</li>
+            <li>سيتم التواصل معك عبر واتساب بعد تأكيد الدفع لتسليم بيانات الفيزا.</li>
+            <li>لا يمكن إلغاء الطلب أو استرداد المبلغ بعد إصدار أو تسليم البطاقة.</li>
+          </ul>
+        ) : isClash ? (
+          <ul className="mt-1 list-disc space-y-1 pr-4">
+            <li>تأكد من كتابة إيميل Supercell المرتبط بالقرية بشكل صحيح.</li>
             <li>قد نحتاج للتواصل معك عبر واتساب لتأكيد رمز الدخول أثناء التنفيذ.</li>
             <li>لا يمكن إلغاء الطلب أو استرداد المبلغ بعد بدء شحن الحساب.</li>
           </ul>
