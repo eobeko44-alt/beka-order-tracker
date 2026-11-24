@@ -148,6 +148,7 @@ export default function CheckoutModal({ game, pkg, paymentMethods, onClose }: Ch
           {step === 'player' && (
             <PlayerDetailsStep
               initial={player}
+              gameName={game.name_ar}
               onNext={(info) => {
                 setPlayer(info);
                 setStep('payment');
