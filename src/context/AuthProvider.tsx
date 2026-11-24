@@ -5,37 +5,65 @@ import { supabase } from '@/lib/supabase';
 import { fetchProfile } from '@/lib/profiles';
 import type { UserProfile } from '@/types';
 
+function buildFallbackProfile(authUser: User): UserProfile {
+  const metaName =
+    (typeof authUser.user_metadata?.full_name === 'string' && authUser.user_metadata.full_name) ||
+    (typeof authUser.user_metadata?.name === 'string' && authUser.user_metadata.name) ||
+    authUser.email?.split('@')[0] ||
+    'عميلنا العزيز';
+
+  return {
+    id: authUser.id,
+    name: metaName,
+    email: authUser.email ?? '',
+    balance: 0,
+    points: 0,
+    role: 'user',
+  } as UserProfile;
+}
+
 export default function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadProfile = useCallback(async (userId: string) => {
+  const loadProfile = useCallback(async (authUser: User) => {
     try {
-      setProfile(await fetchProfile(userId));
+      const loaded = await fetchProfile(authUser.id);
+      setProfile(loaded ?? buildFallbackProfile(authUser));
     } catch {
-      setProfile(null);
+      setProfile(buildFallbackProfile(authUser));
     }
   }, []);
 
   useEffect(() => {
     let active = true;
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+
+    async function syncSession(nextSession: Session | null) {
       if (!active) return;
       setSession(nextSession);
-      // Defer database calls out of the auth callback to avoid blocking the auth client.
+
+      if (nextSession?.user) {
+        await loadProfile(nextSession.user);
+      } else {
+        setProfile(null);
+      }
+
+      if (active) {
+        setIsLoading(false);
+      }
+    }
+
+    void supabase.auth.getSession().then(({ data }) => {
+      void syncSession(data.session ?? null);
+    });
+
+    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       window.setTimeout(() => {
-        void (async () => {
-          if (!active) return;
-          if (nextSession) {
-            await loadProfile(nextSession.user.id);
-          } else {
-            setProfile(null);
-          }
-          if (active) setIsLoading(false);
-        })();
+        void syncSession(nextSession);
       }, 0);
     });
+
     return () => {
       active = false;
       data.subscription.unsubscribe();
@@ -43,8 +71,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfile]);
 
   const refreshProfile = useCallback(async () => {
-    const userId = session?.user.id;
-    if (userId) await loadProfile(userId);
+    if (session?.user) {
+      await loadProfile(session.user);
+    }
   }, [session, loadProfile]);
 
   const user: User | null = session?.user ?? null;
@@ -58,7 +87,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       isOwner: profile?.role === 'owner',
       refreshProfile,
     }),
-    [session, user, profile, isLoading, refreshProfile]
+    [session, user, profile, isLoading, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
