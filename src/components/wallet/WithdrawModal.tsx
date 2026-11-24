@@ -180,8 +180,16 @@ export default function WithdrawModal({
 
             <button
               type="button"
+              onClick={() => setSubmittedRecord(null)}
+              className="flex h-11 items-center justify-center rounded-xl border border-zinc-700 text-sm font-semibold text-zinc-200 transition hover:bg-zinc-800"
+            >
+              تعديل أو طلب جديد
+            </button>
+
+            <button
+              type="button"
               onClick={onClose}
-              className="flex h-11 items-center justify-center rounded-xl border border-zinc-700 text-sm font-semibold text-zinc-300 transition hover:bg-zinc-800"
+              className="flex h-11 items-center justify-center rounded-xl border border-zinc-800 text-sm font-semibold text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200"
             >
               إغلاق
             </button>
