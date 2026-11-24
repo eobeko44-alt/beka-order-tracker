@@ -4,7 +4,7 @@ import { completePhoneLogin } from '@/lib/auth';
 import { describeAuthError } from '@/lib/authErrors';
 import { normalizeLocalPhone } from '@/lib/phone';
 import { buildWhatsAppUrl } from '@/lib/format';
-import { buildPhoneLoginMessage } from '@/lib/phoneLogin';
+import { buildPhoneLoginMessage } from '@/lib/phonelogin';
 import { checkPhoneLogin, startPhoneLogin } from '@/lib/phoneLogin.functions';
 import { STORE_CONTACT_DISPLAY } from '@/lib/config';
 
@@ -27,7 +27,10 @@ function loadPending(): PendingLogin | null {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PendingLogin;
-    if (!parsed.requestId || new Date(parsed.expiresAt).getTime() <= Date.now()) return null;
+    const expTime = new Date(parsed.expiresAt).getTime();
+    if (!parsed.requestId || !parsed.code || !Number.isFinite(expTime) || expTime <= Date.now()) {
+      return null;
+    }
     return parsed;
   } catch {
     return null;
@@ -44,6 +47,7 @@ function savePending(value: PendingLogin | null) {
 }
 
 function formatRemaining(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return '0:00';
   const total = Math.max(0, Math.floor(ms / 1000));
   const minutes = Math.floor(total / 60);
   const seconds = total % 60;
@@ -92,7 +96,7 @@ export default function PhoneSignIn({ onBack }: PhoneSignInProps) {
         } else if (result.status === 'rejected') {
           savePending(null);
           setPending(null);
-          setError('الإدارة رفضت طلب الدخول. تأكد إنك أرسلت الرسالة من نفس الرقم وجرب تاني.');
+          setError('الإدارة رفضت طلب الدخول. تأكد أنك أرسلت الرسالة من نفس الرقم وجرّب ثاني.');
         } else if (result.status === 'expired') {
           savePending(null);
           setPending(null);
@@ -126,10 +130,16 @@ export default function PhoneSignIn({ onBack }: PhoneSignInProps) {
       setError('أدخل رقم هاتف سوداني صحيح (مثال: 0912345678).');
       return;
     }
+
     setIsBusy(true);
     setError(null);
     try {
       const result = await startPhoneLogin({ data: { phone: local } });
+      if (!result || !result.ok) {
+        setError(result?.error ?? 'تعذر إنشاء رمز التحقق.');
+        return;
+      }
+
       const next: PendingLogin = {
         requestId: result.requestId,
         phone: result.phone,
@@ -141,7 +151,7 @@ export default function PhoneSignIn({ onBack }: PhoneSignInProps) {
       setNow(Date.now());
     } catch (err) {
       const detail = err instanceof Error ? err.message : JSON.stringify(err);
-      setError(`${describeAuthError(err)} — ${detail}`);
+      setError(`${describeAuthError(err)} - ${detail}`);
     } finally {
       setIsBusy(false);
     }
@@ -165,19 +175,29 @@ export default function PhoneSignIn({ onBack }: PhoneSignInProps) {
       <div className="flex flex-col gap-5">
         <div className="flex flex-col items-center gap-2 rounded-2xl border border-brand-500/30 bg-brand-500/10 p-5 text-center">
           <span className="text-xs font-semibold text-zinc-300">رمز التحقق الخاص بك</span>
-          <span dir="ltr" className="text-4xl font-extrabold tracking-[0.35em] text-brand-200" aria-label="رمز التحقق">
+          <span
+            dir="ltr"
+            className="text-4xl font-extrabold tracking-[0.35em] text-brand-200"
+            aria-label="رمز التحقق"
+          >
             {pending.code}
           </span>
-          <span dir="ltr" className="text-sm text-zinc-400">{pending.phone}</span>
+          <span dir="ltr" className="text-sm text-zinc-400">
+            {pending.phone}
+          </span>
           <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-zinc-400">
             <Clock className="h-3.5 w-3.5" />
-            <span>صالح لمدة <span dir="ltr">{formatRemaining(remaining)}</span></span>
+            <span>
+              صالح لمدة <span dir="ltr">{formatRemaining(remaining)}</span>
+            </span>
           </span>
         </div>
 
         <ol className="flex flex-col gap-2 text-sm leading-relaxed text-zinc-300">
           <li>1. اضغط الزر أدناه ليفتح لك واتساب برسالة جاهزة فيها رقمك والرمز.</li>
-          <li>2. أرسل الرسالة كما هي <strong className="text-zinc-100">من نفس الرقم</strong> الذي كتبته.</li>
+          <li>
+            2. أرسل الرسالة كما هي <strong className="text-zinc-100">من نفس الرقم</strong> الذي كتبته.
+          </li>
           <li>3. بعد ما الإدارة تأكد الرمز سيتم دخولك هنا تلقائياً.</li>
         </ol>
 
@@ -185,7 +205,7 @@ export default function PhoneSignIn({ onBack }: PhoneSignInProps) {
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-whatsapp px-5 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-whatsapp-hover"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-whatsapp px-5 py-3.5 text-sm font-bold text-white transition hover:bg-whatsapp-hover"
         >
           <MessageCircle className="h-5 w-5" />
           أرسل الرمز للإدارة على واتساب
@@ -209,7 +229,11 @@ export default function PhoneSignIn({ onBack }: PhoneSignInProps) {
           رقم الإدارة على واتساب: <span dir="ltr">{STORE_CONTACT_DISPLAY}</span>
         </p>
 
-        {error && <p role="alert" className="text-center text-sm text-red-400">{error}</p>}
+        {error && (
+          <p role="alert" className="text-center text-sm text-red-400">
+            {error}
+          </p>
+        )}
 
         <button
           type="button"
@@ -217,7 +241,7 @@ export default function PhoneSignIn({ onBack }: PhoneSignInProps) {
           className="inline-flex items-center justify-center gap-2 text-xs font-semibold text-zinc-400 transition-colors hover:text-zinc-200"
         >
           <RefreshCw className="h-4 w-4" />
-          غير الرقم أو اطلب رمز جديد
+          غيّر الرقم أو اطلب رمز جديد
         </button>
       </div>
     );
@@ -226,7 +250,7 @@ export default function PhoneSignIn({ onBack }: PhoneSignInProps) {
   return (
     <div className="flex flex-col gap-4">
       <form onSubmit={handleStart} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-2">
+        <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-zinc-200">رقم الهاتف (واتساب)</span>
           <input
             value={phone}
@@ -246,14 +270,18 @@ export default function PhoneSignIn({ onBack }: PhoneSignInProps) {
         <button
           type="submit"
           disabled={isBusy || !phone.trim()}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-brand-500 disabled:opacity-50"
         >
           {isBusy && <Loader2 className="h-4 w-4 animate-spin" />}
           أنشئ رمز التحقق
         </button>
       </form>
 
-      {error && <p role="alert" className="text-center text-sm text-red-400">{error}</p>}
+      {error && (
+        <p role="alert" className="text-center text-sm text-red-400">
+          {error}
+        </p>
+      )}
 
       <button
         type="button"
