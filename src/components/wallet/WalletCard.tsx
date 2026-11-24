@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Plus, Star, Wallet } from 'lucide-react';
+import { ArrowUpRight, Plus, Star, Wallet } from 'lucide-react';
 import TopUpModal from '@/components/wallet/TopUpModal';
+import WithdrawModal from '@/components/wallet/WithdrawModal';
 import { Link } from '@tanstack/react-router';
 import { buildWhatsAppUrl, formatPrice } from '@/lib/format';
 import { loyaltyProgress, SDG_PER_POINT } from '@/lib/loyalty';
@@ -9,6 +10,8 @@ import type { UserProfile } from '@/types';
 interface WalletCardProps {
   profile: UserProfile | null;
   onTopUpSubmitted?: () => void;
+  openWithdrawInitially?: boolean;
+  onWithdrawModalChange?: (open: boolean) => void;
 }
 
 const actionClass =
@@ -19,9 +22,20 @@ const actionStyle = {
   color: '#1e1b4b',
 } as const;
 
-export default function WalletCard({ profile, onTopUpSubmitted }: WalletCardProps) {
+export default function WalletCard({
+  profile,
+  onTopUpSubmitted,
+  openWithdrawInitially = false,
+  onWithdrawModalChange,
+}: WalletCardProps) {
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(openWithdrawInitially);
   const loyalty = loyaltyProgress(profile?.points ?? 0);
+
+  function setWithdrawState(nextOpen: boolean) {
+    setIsWithdrawOpen(nextOpen);
+    onWithdrawModalChange?.(nextOpen);
+  }
 
   return (
     <section className="relative w-full overflow-hidden rounded-2xl border border-brand-500/30 bg-gradient-to-br from-brand-700 via-brand-600 to-electric-600 p-4 text-white shadow-xl shadow-brand-700/25 animate-fade-up sm:rounded-3xl sm:p-6">
@@ -34,8 +48,8 @@ export default function WalletCard({ profile, onTopUpSubmitted }: WalletCardProp
             <Wallet className="h-5 w-5" />
           </span>
           <div className="flex flex-col">
-            <h2 className="text-base font-extrabold sm:text-lg">شحن المحفظة</h2>
-            <p className="text-xs text-white/75 sm:text-sm">اشحن رصيدك وادفع طلباتك مباشرة</p>
+            <h2 className="text-base font-extrabold sm:text-lg">المحفظة</h2>
+            <p className="text-xs text-white/75 sm:text-sm">اشحن رصيدك أو اطلب سحب أموالك بسهولة</p>
           </div>
         </div>
 
@@ -96,17 +110,28 @@ export default function WalletCard({ profile, onTopUpSubmitted }: WalletCardProp
           </div>
         </div>
 
-        <div className="flex">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           {profile ? (
-            <button
-              type="button"
-              onClick={() => setIsTopUpOpen(true)}
-              className={actionClass}
-              style={actionStyle}
-            >
-              <Plus className="h-4 w-4" style={{ color: '#1e1b4b' }} />
-              <span style={{ color: '#1e1b4b' }}>اشحن محفظتي</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setIsTopUpOpen(true)}
+                className={actionClass}
+                style={actionStyle}
+              >
+                <Plus className="h-4 w-4" style={{ color: '#1e1b4b' }} />
+                <span style={{ color: '#1e1b4b' }}>اشحن محفظتي</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setWithdrawState(true)}
+                className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-white/30 bg-zinc-950/60 px-4 py-3 text-sm font-extrabold text-white shadow-md backdrop-blur-sm transition hover:bg-zinc-950/80 active:scale-[0.99]"
+              >
+                <ArrowUpRight className="h-4 w-4 text-brand-200" />
+                <span>سحب الرصيد</span>
+              </button>
+            </>
           ) : (
             <Link to="/account" className={actionClass} style={actionStyle}>
               <span style={{ color: '#1e1b4b' }}>سجل دخولك عشان تشحن محفظتك</span>
@@ -120,6 +145,15 @@ export default function WalletCard({ profile, onTopUpSubmitted }: WalletCardProp
           userId={profile.id}
           userName={profile.name ?? ''}
           onClose={() => setIsTopUpOpen(false)}
+          onSubmitted={onTopUpSubmitted}
+        />
+      )}
+
+      {(isWithdrawOpen || openWithdrawInitially) && profile && (
+        <WithdrawModal
+          balance={profile.balance ?? 0}
+          userName={profile.name ?? ''}
+          onClose={() => setWithdrawState(false)}
           onSubmitted={onTopUpSubmitted}
         />
       )}
