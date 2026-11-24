@@ -162,6 +162,7 @@ export default function WalletCard({
 
       {isWithdrawOpen && profile && (
         <WithdrawModal
+          userId={profile.id}
           balance={profile.balance ?? 0}
           userName={profile.name ?? ''}
           onClose={handleCloseWithdraw}
