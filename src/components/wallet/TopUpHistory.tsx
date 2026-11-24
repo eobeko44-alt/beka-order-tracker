@@ -10,7 +10,7 @@ import {
 import { formatPrice } from '@/lib/format';
 import type { TopUpRequest } from '@/types';
 
-const INITIAL_VISIBLE = 3;
+const INITIAL_VISIBLE = 1;
 
 export default function TopUpHistory() {
   const [items, setItems] = useState<TopUpRequest[] | null>(null);
