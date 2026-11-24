@@ -23,6 +23,25 @@ function getEnv(name: string): string {
   return typeof val === 'string' ? val.trim() : '';
 }
 
+function formatErr(err: unknown): string {
+  if (!err) return 'empty_error';
+  if (err instanceof Error) {
+    const causeMsg = err.cause instanceof Error ? err.cause.message : err.cause ? String(err.cause) : '';
+    return `${err.name}: ${err.message}${causeMsg ? ` (cause: ${causeMsg})` : ''}`;
+  }
+  if (typeof err === 'object') {
+    const obj = err as Record<string, unknown>;
+    const parts = [obj.code, obj.message, obj.details, obj.hint].filter(Boolean);
+    if (parts.length > 0) return parts.join(' | ');
+    try {
+      return JSON.stringify(err);
+    } catch {
+      return 'unserializable_object';
+    }
+  }
+  return String(err);
+}
+
 function adminDb() {
   const url =
     getEnv('SUPABASE_URL') ||
@@ -70,7 +89,7 @@ export const startPhoneLogin = createServerFn({ method: 'POST' })
       if (counterError) {
         return {
           ok: false as const,
-          error: `counter_error: ${counterError.message || counterError.code || 'unknown'}`,
+          error: `counter_error: ${formatErr(counterError)}`,
         };
       }
 
@@ -88,7 +107,7 @@ export const startPhoneLogin = createServerFn({ method: 'POST' })
       if (error || !row) {
         return {
           ok: false as const,
-          error: `insert_error: ${error?.message || error?.code || 'insert_failed'}`,
+          error: `insert_error: ${formatErr(error) || 'insert_failed'}`,
         };
       }
 
@@ -100,13 +119,7 @@ export const startPhoneLogin = createServerFn({ method: 'POST' })
         expiresAt: row.expires_at,
       };
     } catch (err) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : typeof err === 'string'
-            ? err
-            : JSON.stringify(err);
-      return { ok: false as const, error: `server_error: ${msg}` };
+      return { ok: false as const, error: `server_error: ${formatErr(err)}` };
     }
   });
 
