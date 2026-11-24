@@ -4,8 +4,8 @@ import { completePhoneLogin } from '@/lib/auth';
 import { describeAuthError } from '@/lib/authErrors';
 import { normalizeLocalPhone } from '@/lib/phone';
 import { buildWhatsAppUrl } from '@/lib/format';
-import { buildPhoneLoginMessage } from '@/lib/phonelogin';
-import { checkPhoneLogin, startPhoneLogin } from '@/lib/phonelogin.functions';
+import { buildPhoneLoginMessage } from '@/lib/phoneLogin';
+import { checkPhoneLogin, startPhoneLogin } from '@/lib/phoneLogin.functions';
 import { STORE_CONTACT_DISPLAY } from '@/lib/config';
 
 interface PhoneSignInProps {
