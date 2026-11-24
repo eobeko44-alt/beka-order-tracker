@@ -4,9 +4,12 @@ import { completePhoneLogin } from '@/lib/auth';
 import { describeAuthError } from '@/lib/authErrors';
 import { normalizeLocalPhone } from '@/lib/phone';
 import { buildWhatsAppUrl } from '@/lib/format';
-import { buildPhoneLoginMessage } from '@/lib/phonelogin';
 import { checkPhoneLogin, startPhoneLogin } from '@/lib/phoneLogin.functions';
 import { STORE_CONTACT_DISPLAY } from '@/lib/config';
+
+function buildPhoneLoginMessage(phone: string, code: string): string {
+  return `مرحباً بيكا ستور، رمز التحقق الخاص بي لتسجيل الدخول هو: ${code} (رقمي: ${phone})`;
+}
 
 interface PhoneSignInProps {
   onBack: () => void;
