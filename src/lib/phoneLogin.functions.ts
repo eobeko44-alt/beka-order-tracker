@@ -129,17 +129,17 @@ async function findOrCreatePhoneUser(phone: string): Promise<string> {
     .limit(1)
     .maybeSingle();
 
-  if (profileError) throw new Error(profileError.message);
+  if (profileError) throw new Error(`profiles_select: ${formatErr(profileError)}`);
 
   if (profile) {
     const { data: existing, error } = await db.auth.admin.getUserById(profile.id);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(`get_user: ${formatErr(error)}`);
     if (existing.user?.email) return existing.user.email;
     const { error: updateError } = await db.auth.admin.updateUserById(profile.id, {
       email,
       email_confirm: true,
     });
-    if (updateError) throw new Error(updateError.message);
+    if (updateError) throw new Error(`update_user: ${formatErr(updateError)}`);
     return email;
   }
 
@@ -150,7 +150,7 @@ async function findOrCreatePhoneUser(phone: string): Promise<string> {
   });
 
   if (createError && !/already\s*registered|exists/i.test(createError.message)) {
-    throw new Error(createError.message);
+    throw new Error(`create_user: ${formatErr(createError)}`);
   }
 
   const userId = created?.user?.id;
@@ -159,7 +159,7 @@ async function findOrCreatePhoneUser(phone: string): Promise<string> {
       .from('profiles')
       .update({ phone, email: null })
       .eq('id', userId);
-    if (phoneError) throw new Error(phoneError.message);
+    if (phoneError) throw new Error(`profiles_update: ${formatErr(phoneError)}`);
   }
 
   return email;
@@ -176,7 +176,7 @@ export const checkPhoneLogin = createServerFn({ method: 'POST' })
       .eq('id', data.requestId)
       .maybeSingle();
 
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(`request_select: ${formatErr(error)}`);
     if (!row || row.status === 'used') return { status: 'expired' };
     if (row.status === 'rejected') return { status: 'rejected' };
     if (row.status === 'pending') {
@@ -191,7 +191,7 @@ export const checkPhoneLogin = createServerFn({ method: 'POST' })
       .select('id')
       .maybeSingle();
 
-    if (claimError) throw new Error(claimError.message);
+    if (claimError) throw new Error(`claim_update: ${formatErr(claimError)}`);
     if (!claimed) return { status: 'expired' };
 
     try {
@@ -201,11 +201,11 @@ export const checkPhoneLogin = createServerFn({ method: 'POST' })
         email,
       });
       if (linkError || !link.properties?.hashed_token) {
-        throw new Error(linkError?.message ?? 'link_failed');
+        throw new Error(`generate_link: ${formatErr(linkError) || 'link_failed'}`);
       }
       return { status: 'approved', tokenHash: link.properties.hashed_token };
     } catch (err) {
       await db.from('phone_login_requests').update({ status: 'approved' }).eq('id', row.id);
-      throw err;
+      throw new Error(`auth_flow: ${formatErr(err)}`);
     }
   });
