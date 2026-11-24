@@ -1,7 +1,12 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { normalizeLocalPhone } from '@/lib/phone';
-import { phoneLoginEmail, type PhoneLoginStatus } from '@/lib/phonelogin';
+
+type PhoneLoginStatus = 'pending' | 'approved' | 'rejected' | 'expired' | 'used';
+
+function phoneLoginEmail(phone: string): string {
+  return `phone-${phone}@bekastore.local`;
+}
 
 const MAX_REQUESTS_PER_WINDOW = 20;
 const WINDOW_MINUTES = 10;
