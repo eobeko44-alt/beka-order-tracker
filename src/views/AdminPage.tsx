@@ -6,17 +6,26 @@ import AdminPaymentMethods from "@/components/admin/AdminPaymentMethods";
 import AdminTopUps from "@/components/admin/AdminTopUps";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminPhoneLogins from "@/components/admin/AdminPhoneLogins";
+import AdminWithdrawalsTab from "@/components/admin/AdminWithdrawalsTab";
 import SignInPanel from "@/components/wallet/SignInPanel";
 import StatusScreen from "@/components/StatusScreen";
 import { useAuth } from "@/hooks/useAuth";
 
-type Tab = "logins" | "topups" | "payments" | "orders" | "reviews" | "users";
+type Tab =
+  | "logins"
+  | "topups"
+  | "withdrawals"
+  | "payments"
+  | "orders"
+  | "reviews"
+  | "users";
 
 const OWNER_EMAILS = ["abobaker096605@gmail.com"];
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "logins", label: "طلبات الدخول" },
   { id: "topups", label: "طلبات الشحن" },
+  { id: "withdrawals", label: "طلبات السحب" },
   { id: "payments", label: "أرقام الدفع" },
   { id: "orders", label: "الطلبات" },
   { id: "reviews", label: "آراء العملاء" },
@@ -26,13 +35,20 @@ const TABS: { id: Tab; label: string }[] = [
 const TAB_CONTENT: Record<Tab, () => ReactNode> = {
   logins: () => <AdminPhoneLogins />,
   topups: () => <AdminTopUps />,
+  withdrawals: () => <AdminWithdrawalsTab />,
   payments: () => <AdminPaymentMethods />,
   orders: () => <AdminOrders />,
   reviews: () => <AdminReviews />,
   users: () => <AdminUsers />,
 };
 
-function SafeTabView({ tab }: { tab: Tab }) {
+function SafeTabView({
+  tab,
+  onResetTab,
+}: {
+  tab: Tab;
+  onResetTab: () => void;
+}) {
   try {
     return <>{TAB_CONTENT[tab]()}</>;
   } catch {
@@ -41,7 +57,7 @@ function SafeTabView({ tab }: { tab: Tab }) {
         title="تعذر تحميل هذا القسم"
         description="حدث خطأ أثناء عرض محتوى التبويب، جرّب التبديل إلى تبويب آخر."
         actionLabel="العودة إلى طلبات الدخول"
-        onAction={() => {}}
+        onAction={onResetTab}
       />
     );
   }
@@ -103,7 +119,7 @@ export default function AdminPage() {
           ))}
         </div>
 
-        <SafeTabView tab={tab} />
+        <SafeTabView tab={tab} onResetTab={() => setTab("logins")} />
       </div>
     </div>
   );
