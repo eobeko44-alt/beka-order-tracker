@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowUpRight, CheckCircle2, Info, X } from 'lucide-react';
 import { buildWhatsAppUrl, formatPrice } from '@/lib/format';
+import { supabase } from '@/lib/supabase';
 
 export type WithdrawMethod = 'ماي كاشي' | 'فوري' | 'أوكاش';
 
@@ -50,6 +51,8 @@ export default function WithdrawModal({
   const [method, setMethod] = useState<WithdrawMethod | ''>('');
   const [accountName, setAccountName] = useState(userName ?? '');
   const [accountNumber, setAccountNumber] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [errors, setErrors] = useState<{
     amount?: string;
     method?: string;
@@ -58,8 +61,10 @@ export default function WithdrawModal({
   }>({});
   const [submittedRecord, setSubmittedRecord] = useState<WithdrawRecord | null>(null);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSubmitError(null);
+
     const numericAmount = Number(amount);
     const nextErrors: typeof errors = {};
 
@@ -88,20 +93,60 @@ export default function WithdrawModal({
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0 || !method) return;
 
+    setSubmitting(true);
+
+    let insertedId = `WD-${Date.now().toString().slice(-6)}`;
+    let createdAtIso = new Date().toISOString();
+
+    try {
+      const { data, error } = await supabase
+        .from('withdraw_requests')
+        .insert({
+          user_id: userId ?? null,
+          user_name: userName ?? trimmedName,
+          amount: numericAmount,
+          method,
+          account_name: trimmedName,
+          account_number: trimmedAccount,
+          status: 'قيد المراجعة',
+        })
+        .select('id, created_at')
+        .single();
+
+      if (error) {
+        setSubmitError(error.message || 'تعذر حفظ طلب السحب في قاعدة البيانات');
+        setSubmitting(false);
+        return;
+      }
+
+      if (data?.id) {
+        insertedId = String(data.id);
+      }
+      if (data?.created_at) {
+        createdAtIso = String(data.created_at);
+      }
+    } catch {
+      setSubmitError('حدث خطأ أثناء الاتصال بقاعدة البيانات');
+      setSubmitting(false);
+      return;
+    }
+
+    const formattedTime = new Date(createdAtIso).toLocaleString('ar-SD', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
     const record: WithdrawRecord = {
-      id: `WD-${Date.now().toString().slice(-6)}`,
+      id: insertedId,
       amount: numericAmount,
       method,
       accountName: trimmedName,
       accountNumber: trimmedAccount,
       status: 'قيد المراجعة',
-      createdAt: new Date().toLocaleString('ar-SD', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
+      createdAt: formattedTime,
     };
 
     try {
@@ -113,6 +158,7 @@ export default function WithdrawModal({
       // تجاهل أخطاء التخزين المحلي في المتصفحات المقيدة
     }
 
+    setSubmitting(false);
     setSubmittedRecord(record);
     onSubmitted?.();
   }
@@ -196,6 +242,12 @@ export default function WithdrawModal({
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate className="mt-5 flex flex-col gap-4">
+            {submitError && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-semibold text-red-300">
+                {submitError}
+              </div>
+            )}
+
             <div className="flex flex-col gap-1.5">
               <label htmlFor="withdraw-amount" className="text-sm font-semibold text-zinc-200">
                 المبلغ المراد سحبه
@@ -296,9 +348,10 @@ export default function WithdrawModal({
 
             <button
               type="submit"
-              className="mt-1 flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-600 text-sm font-bold text-white transition hover:bg-brand-500 active:scale-[0.99]"
+              disabled={submitting}
+              className="mt-1 flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-600 text-sm font-bold text-white transition hover:bg-brand-500 active:scale-[0.99] disabled:opacity-60"
             >
-              تأكيد طلب السحب
+              {submitting ? 'جاري إرسال الطلب...' : 'تأكيد طلب السحب'}
               <ArrowUpRight className="h-4 w-4" />
             </button>
           </form>
