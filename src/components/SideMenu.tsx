@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ArrowUpRight,
   ChevronLeft,
   Heart,
   Home,
@@ -28,7 +29,12 @@ interface SideMenuProps {
   onClose: () => void;
 }
 
-type InternalPath = '/' | typeof ORDERS_ROUTE | typeof TRACK_ROUTE | typeof FAVORITES_ROUTE | typeof ACCOUNT_ROUTE;
+type InternalPath =
+  | '/'
+  | typeof ORDERS_ROUTE
+  | typeof TRACK_ROUTE
+  | typeof FAVORITES_ROUTE
+  | typeof ACCOUNT_ROUTE;
 
 interface MenuItem {
   label: string;
@@ -37,12 +43,21 @@ interface MenuItem {
   href: InternalPath | `https://${string}`;
   sectionId?: string;
   external?: boolean;
+  isWithdrawAction?: boolean;
 }
 
 const MENU_ITEMS: MenuItem[] = [
   { label: 'الرئيسية', hint: 'ارجع للصفحة الرئيسية', icon: Home, href: '/' },
   { label: 'المتجر', hint: 'شوف الألعاب والباقات', icon: Store, href: '/', sectionId: 'games' },
   { label: 'المحفظة', hint: 'رصيدك ونقاطك وسجل عملياتك', icon: Wallet, href: '/', sectionId: 'wallet' },
+  {
+    label: 'سحب الرصيد',
+    hint: 'اطلب سحب رصيد محفظتك',
+    icon: ArrowUpRight,
+    href: '/',
+    sectionId: 'withdraw',
+    isWithdrawAction: true,
+  },
   { label: 'تتبع طلبك', hint: 'برقم الطلب أو ID اللاعب', icon: SearchCheck, href: TRACK_ROUTE },
   { label: 'طلباتي', hint: 'تابع طلباتك السابقة', icon: ReceiptText, href: ORDERS_ROUTE },
   { label: 'المفضلة', hint: 'الألعاب اللي حفظتها', icon: Heart, href: FAVORITES_ROUTE },
@@ -66,16 +81,21 @@ const ITEM_CLASS =
 
 function scrollToSection(sectionId: string) {
   window.setTimeout(() => {
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const target =
+      document.getElementById(sectionId) ??
+      (sectionId === 'withdraw' ? document.getElementById('wallet') : null);
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 150);
 }
 
 export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
   const route = useLocation({ select: (location) => location.pathname });
   const navigate = useNavigate();
+  const [withdrawNotice, setWithdrawNotice] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
+    setWithdrawNotice(false);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKeyDown = (event: KeyboardEvent) => {
@@ -89,6 +109,9 @@ export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
   }, [isOpen, onClose]);
 
   function handleItemClick(item: MenuItem) {
+    if (item.isWithdrawAction) {
+      setWithdrawNotice(true);
+    }
     onClose();
     if (item.external || item.href.startsWith('https://')) return;
     const sectionId = item.sectionId;
@@ -158,13 +181,21 @@ export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
                   if (!item.external) event.preventDefault();
                   handleItemClick(item);
                 }}
-                className={`${ITEM_CLASS} ${isActive ? 'bg-brand-500/10' : ''}`}
+                className={`${ITEM_CLASS} ${
+                  isActive
+                    ? 'bg-brand-500/10'
+                    : item.isWithdrawAction
+                      ? 'border border-brand-500/25 bg-brand-500/5 hover:border-brand-500/45'
+                      : ''
+                }`}
               >
                 <span
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-200 ${
                     isActive
                       ? 'bg-brand-600 text-white'
-                      : 'bg-zinc-900 text-brand-300 group-hover:bg-brand-600 group-hover:text-white'
+                      : item.isWithdrawAction
+                        ? 'bg-brand-500/15 text-brand-300 group-hover:bg-brand-600 group-hover:text-white'
+                        : 'bg-zinc-900 text-brand-300 group-hover:bg-brand-600 group-hover:text-white'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -179,8 +210,22 @@ export default function SideMenu({ isOpen, onClose }: SideMenuProps) {
           })}
         </nav>
 
-        <div className="border-t border-zinc-800 px-5 py-4 text-center text-xs text-zinc-500">
-          شحن سريع وآمن لكل الألعاب
+        <div className="border-t border-brand-500/20 p-3.5">
+          <div className="rounded-2xl border border-brand-500/25 bg-zinc-900/90 px-4 py-3 text-xs">
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2 font-bold text-zinc-100">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                متصل الآن
+              </span>
+              <span className="font-semibold text-brand-300">{STORE_NAME}</span>
+            </div>
+            <p className="mt-1.5 text-zinc-400">شحن سريع وآمن لكل الألعاب</p>
+            {withdrawNotice && (
+              <p className="mt-1.5 text-[11px] text-cyan-300">
+                تم التوجه لقسم المحفظة لإتمام طلب السحب.
+              </p>
+            )}
+          </div>
         </div>
       </aside>
     </div>
