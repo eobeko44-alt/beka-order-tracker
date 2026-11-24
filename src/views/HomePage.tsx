@@ -33,6 +33,8 @@ const GAME_POSTERS: Record<string, string> = {
     'https://images.pexels.com/photos/5697183/pexels-photo-5697183.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
   fortnite:
     'https://images.pexels.com/photos/4293307/pexels-photo-4293307.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+  'clash-of-clans':
+    'https://original.fontsinuse.com/fontsinuse.com/use-images/95/95495/95495.jpeg',
 };
 
 const FEATURED_GAME_IDS = ['pubg-mobile', 'free-fire', 'ludo', 'us-visa'];
@@ -176,7 +178,7 @@ export default function HomePage({ games, packages, reviews }: HomePageProps) {
         <WalletSection />
       </div>
 
-      {/* Featured Games — Large Poster Cards */}
+      {/* Featured Games — Compact Poster Cards */}
       <section id="games" className="mx-auto max-w-6xl scroll-mt-20 px-3 py-12 sm:px-6">
         <div className="mb-6 flex items-end justify-between">
           <div className="flex flex-col gap-1">
@@ -191,7 +193,7 @@ export default function HomePage({ games, packages, reviews }: HomePageProps) {
             لا توجد لعبة تطابق بحثك
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
             {visibleGames.map((game) => {
               const gamePackages = packages.filter((pkg) => pkg.game_id === game.id);
               const prices = gamePackages.map((pkg) => pkg.price_sdg);
