@@ -1,5 +1,12 @@
-import { useEffect, useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, ChevronDown, ChevronUp, Clock, History } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  History,
+} from 'lucide-react';
 import WalletCard from '@/components/wallet/WalletCard';
 import { getWithdrawStorageKey, type WithdrawRecord } from '@/components/wallet/WithdrawModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,6 +28,8 @@ interface WalletHistoryEntry {
   rejected: boolean;
 }
 
+type HistoryFilter = 'all' | 'شحن' | 'سحب';
+
 const INITIAL_VISIBLE = 1;
 
 export default function WalletSection() {
@@ -28,6 +37,7 @@ export default function WalletSection() {
   const [historyVersion, setHistoryVersion] = useState(0);
   const [openWithdraw, setOpenWithdraw] = useState(false);
   const [entries, setEntries] = useState<WalletHistoryEntry[]>([]);
+  const [filter, setFilter] = useState<HistoryFilter>('all');
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
@@ -149,10 +159,25 @@ export default function WalletSection() {
     };
   }, [profile?.id, historyVersion]);
 
+  const counts = useMemo(() => {
+    let topupCount = 0;
+    let withdrawCount = 0;
+    for (const item of entries) {
+      if (item.kind === 'شحن') topupCount += 1;
+      else withdrawCount += 1;
+    }
+    return { all: entries.length, شحن: topupCount, سحب: withdrawCount };
+  }, [entries]);
+
+  const filteredEntries = useMemo(() => {
+    if (filter === 'all') return entries;
+    return entries.filter((item) => item.kind === filter);
+  }, [entries, filter]);
+
   if (isLoading) return null;
 
-  const visibleEntries = expanded ? entries : entries.slice(0, INITIAL_VISIBLE);
-  const canToggle = entries.length > INITIAL_VISIBLE;
+  const visibleEntries = expanded ? filteredEntries : filteredEntries.slice(0, INITIAL_VISIBLE);
+  const canToggle = filteredEntries.length > INITIAL_VISIBLE;
 
   return (
     <div
@@ -170,7 +195,7 @@ export default function WalletSection() {
       />
 
       {profile && entries.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/85 p-3.5 text-zinc-100 sm:p-4">
+        <section className="flex flex-col gap-2.5 rounded-2xl border border-zinc-800 bg-zinc-900/85 p-3.5 text-zinc-100 sm:p-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600/20 text-brand-300">
@@ -178,7 +203,7 @@ export default function WalletSection() {
               </span>
               <h3 className="text-sm font-extrabold text-zinc-100 sm:text-base">سجل المحفظة</h3>
               <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-[11px] font-bold text-zinc-300">
-                {entries.length}
+                {filteredEntries.length}
               </span>
             </div>
 
@@ -188,7 +213,7 @@ export default function WalletSection() {
                 onClick={() => setExpanded((prev) => !prev)}
                 className="inline-flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs font-bold text-brand-300 transition hover:bg-zinc-800"
               >
-                <span>{expanded ? 'إخفاء' : `عرض الكل (${entries.length})`}</span>
+                <span>{expanded ? 'إخفاء' : `عرض الكل (${filteredEntries.length})`}</span>
                 {expanded ? (
                   <ChevronUp className="h-3.5 w-3.5" />
                 ) : (
@@ -196,6 +221,36 @@ export default function WalletSection() {
                 )}
               </button>
             )}
+          </div>
+
+          {/* أزرار التمييز بين الكل / شحن / سحب */}
+          <div className="flex items-center gap-1.5">
+            {(
+              [
+                { key: 'all', label: `الكل (${counts.all})` },
+                { key: 'شحن', label: `شحن (${counts['شحن']})` },
+                { key: 'سحب', label: `سحب (${counts['سحب']})` },
+              ] as const
+            ).map((tab) => {
+              const activeTab = filter === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => {
+                    setFilter(tab.key);
+                    setExpanded(false);
+                  }}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
+                    activeTab
+                      ? 'bg-brand-600 text-white shadow-sm'
+                      : 'border border-zinc-800 bg-zinc-950/90 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -207,10 +262,16 @@ export default function WalletSection() {
                   ? 'border-red-500/30 bg-red-500/15 text-red-300'
                   : 'border-amber-500/30 bg-amber-500/15 text-amber-300';
 
+              const kindBadgeClass = isWithdraw
+                ? 'border-amber-500/30 bg-amber-500/15 text-amber-300'
+                : 'border-cyan-500/30 bg-cyan-500/15 text-cyan-300';
+
               return (
                 <div
                   key={entry.id}
-                  className="flex items-center justify-between gap-2.5 rounded-xl border border-zinc-800/90 bg-zinc-950/90 px-3 py-2.5"
+                  className={`flex items-center justify-between gap-2.5 rounded-xl border bg-zinc-950/90 px-3 py-2.5 ${
+                    isWithdraw ? 'border-amber-500/20' : 'border-cyan-500/20'
+                  }`}
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
                     <span
@@ -229,10 +290,18 @@ export default function WalletSection() {
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span dir="ltr" className="text-sm font-extrabold text-zinc-50">
+                        <span
+                          dir="ltr"
+                          className={`text-sm font-extrabold ${
+                            isWithdraw ? 'text-amber-200' : 'text-cyan-200'
+                          }`}
+                        >
+                          {isWithdraw ? '-' : '+'}
                           {formatPrice(entry.amount)}
                         </span>
-                        <span className="rounded bg-zinc-800 px-1.5 py-0.5 text-[10px] font-bold text-zinc-300">
+                        <span
+                          className={`rounded-md border px-1.5 py-0.5 text-[10px] font-bold ${kindBadgeClass}`}
+                        >
                           {entry.kind}
                         </span>
                       </div>
