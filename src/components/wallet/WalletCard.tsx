@@ -9,6 +9,7 @@ import type { UserProfile } from '@/types';
 
 interface WalletCardProps {
   profile: UserProfile | null;
+  isSignedIn?: boolean;
   onTopUpSubmitted?: () => void;
   openWithdrawInitially?: boolean;
   onWithdrawModalChange?: (open: boolean) => void;
@@ -24,6 +25,7 @@ const actionStyle = {
 
 export default function WalletCard({
   profile,
+  isSignedIn = false,
   onTopUpSubmitted,
   openWithdrawInitially = false,
   onWithdrawModalChange,
@@ -31,6 +33,7 @@ export default function WalletCard({
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(openWithdrawInitially);
   const loyalty = loyaltyProgress(profile?.points ?? 0);
+  const hasAuthenticatedAccount = Boolean(profile || isSignedIn);
 
   useEffect(() => {
     if (openWithdrawInitially) {
@@ -122,7 +125,7 @@ export default function WalletCard({
         </div>
 
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-          {profile ? (
+          {hasAuthenticatedAccount ? (
             <>
               <button
                 type="button"
@@ -151,20 +154,20 @@ export default function WalletCard({
         </div>
       </div>
 
-      {isTopUpOpen && profile && (
+      {isTopUpOpen && (
         <TopUpModal
-          userId={profile.id}
-          userName={profile.name ?? ''}
+          userId={profile?.id}
+          userName={profile?.name ?? ''}
           onClose={() => setIsTopUpOpen(false)}
           onSubmitted={onTopUpSubmitted}
         />
       )}
 
-      {isWithdrawOpen && profile && (
+      {isWithdrawOpen && (
         <WithdrawModal
-          userId={profile.id}
-          balance={profile.balance ?? 0}
-          userName={profile.name ?? ''}
+          userId={profile?.id}
+          balance={profile?.balance ?? 0}
+          userName={profile?.name ?? ''}
           onClose={handleCloseWithdraw}
           onSubmitted={onTopUpSubmitted}
         />
