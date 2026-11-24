@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowUpRight, Plus, Star, Wallet } from 'lucide-react';
 import TopUpModal from '@/components/wallet/TopUpModal';
 import WithdrawModal from '@/components/wallet/WithdrawModal';
@@ -32,13 +32,24 @@ export default function WalletCard({
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(openWithdrawInitially);
   const loyalty = loyaltyProgress(profile?.points ?? 0);
 
-  function setWithdrawState(nextOpen: boolean) {
-    setIsWithdrawOpen(nextOpen);
-    onWithdrawModalChange?.(nextOpen);
+  useEffect(() => {
+    if (openWithdrawInitially) {
+      setIsWithdrawOpen(true);
+    }
+  }, [openWithdrawInitially]);
+
+  function handleOpenWithdraw() {
+    setIsWithdrawOpen(true);
+    onWithdrawModalChange?.(true);
+  }
+
+  function handleCloseWithdraw() {
+    setIsWithdrawOpen(false);
+    onWithdrawModalChange?.(false);
   }
 
   return (
-    <section className="relative w-full overflow-hidden rounded-2xl border border-brand-500/30 bg-gradient-to-br from-brand-700 via-brand-600 to-electric-600 p-4 text-white shadow-xl shadow-brand-700/25 animate-fade-up sm:rounded-3xl sm:p-6">
+    <section className="relative w-full overflow-hidden rounded-2xl border border-brand-500/30 bg-gradient-to-br from-brand-700 via-brand-600 to-electric-600 p-4 text-white shadow-xl shadow-brand-700/25 sm:rounded-3xl sm:p-6">
       <div className="pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-20 -start-10 h-48 w-48 rounded-full bg-electric-400/20 blur-3xl" />
 
@@ -125,7 +136,7 @@ export default function WalletCard({
 
               <button
                 type="button"
-                onClick={() => setWithdrawState(true)}
+                onClick={handleOpenWithdraw}
                 className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-white/30 bg-zinc-950/60 px-4 py-3 text-sm font-extrabold text-white shadow-md backdrop-blur-sm transition hover:bg-zinc-950/80 active:scale-[0.99]"
               >
                 <ArrowUpRight className="h-4 w-4 text-brand-200" />
@@ -149,11 +160,11 @@ export default function WalletCard({
         />
       )}
 
-      {(isWithdrawOpen || openWithdrawInitially) && profile && (
+      {isWithdrawOpen && profile && (
         <WithdrawModal
           balance={profile.balance ?? 0}
           userName={profile.name ?? ''}
-          onClose={() => setWithdrawState(false)}
+          onClose={handleCloseWithdraw}
           onSubmitted={onTopUpSubmitted}
         />
       )}
