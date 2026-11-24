@@ -16,12 +16,34 @@ export interface PlayerInfo {
 interface PlayerDetailsStepProps {
   initial: PlayerInfo | null;
   onNext: (info: PlayerInfo) => void;
+  gameName?: string;
+  gameSlug?: string;
 }
 
 const INPUT_CLASS =
   'h-12 w-full rounded-xl border bg-zinc-950 px-4 text-base text-zinc-50 placeholder:text-zinc-600 outline-none transition-all duration-200 focus:ring-4 focus:ring-brand-500/20';
 
-export default function PlayerDetailsStep({ initial, onNext }: PlayerDetailsStepProps) {
+function isClashOfClans(gameName?: string, gameSlug?: string): boolean {
+  const combined = `${gameName ?? ''} ${gameSlug ?? ''}`.toLowerCase();
+  return (
+    combined.includes('clash') ||
+    combined.includes('كلاش') ||
+    combined.includes('كلاشن')
+  );
+}
+
+function isValidSupercellEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+export default function PlayerDetailsStep({
+  initial,
+  onNext,
+  gameName,
+  gameSlug,
+}: PlayerDetailsStepProps) {
+  const isClash = isClashOfClans(gameName, gameSlug);
+
   const [customerName, setCustomerName] = useState(initial?.customerName ?? '');
   const [playerId, setPlayerId] = useState(initial?.playerId ?? '');
   const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ?? '');
@@ -30,16 +52,24 @@ export default function PlayerDetailsStep({ initial, onNext }: PlayerDetailsStep
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const normalizedName = customerName.trim();
-    const normalizedId = normalizePlayerId(playerId);
+    const normalizedIdentifier = isClash
+      ? playerId.trim().toLowerCase()
+      : normalizePlayerId(playerId);
     const normalizedPhone = normalizeWhatsapp(whatsapp);
 
     const nextErrors: typeof errors = {};
     if (normalizedName.length < 2 || normalizedName.length > 80) {
       nextErrors.customerName = 'اكتب اسمك (من حرفين لحد 80 حرف)';
     }
-    if (!isValidPlayerId(normalizedId)) {
+
+    if (isClash) {
+      if (!isValidSupercellEmail(normalizedIdentifier)) {
+        nextErrors.playerId = 'أدخل إيميل سوبرسل صحيح، مثال: name@gmail.com';
+      }
+    } else if (!isValidPlayerId(normalizedIdentifier)) {
       nextErrors.playerId = 'أدخل ID اللاعب (من 3 إلى 50 حرفاً أو رقماً)';
     }
+
     if (!isValidWhatsapp(normalizedPhone)) {
       nextErrors.whatsapp = 'أدخل رقم واتساب صحيح مع كود الدولة، مثال: 249912345678';
     }
@@ -47,14 +77,22 @@ export default function PlayerDetailsStep({ initial, onNext }: PlayerDetailsStep
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    onNext({ customerName: normalizedName, playerId: normalizedId, whatsapp: normalizedPhone });
+    onNext({
+      customerName: normalizedName,
+      playerId: normalizedIdentifier,
+      whatsapp: normalizedPhone,
+    });
   }
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       <div>
         <h2 className="text-lg font-bold text-zinc-50">بياناتك</h2>
-        <p className="mt-1 text-sm text-zinc-400">اكتب اسمك وID اللاعب ورقم واتساب للتواصل معك</p>
+        <p className="mt-1 text-sm text-zinc-400">
+          {isClash
+            ? 'اكتب اسمك وإيميل سوبرسل ورقم واتساب للتواصل معك'
+            : 'اكتب اسمك وID اللاعب ورقم واتساب للتواصل معك'}
+        </p>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -78,17 +116,19 @@ export default function PlayerDetailsStep({ initial, onNext }: PlayerDetailsStep
 
       <div className="flex flex-col gap-2">
         <label htmlFor="player-id" className="text-sm font-semibold text-zinc-200">
-          ID اللاعب
+          {isClash ? 'إيميل سوبرسل' : 'ID اللاعب'}
         </label>
         <input
           id="player-id"
-          type="text"
-          inputMode="numeric"
+          type={isClash ? 'email' : 'text'}
+          dir="ltr"
+          inputMode={isClash ? 'email' : 'numeric'}
+          autoComplete={isClash ? 'email' : undefined}
           value={playerId}
           onChange={(event) => setPlayerId(event.target.value)}
-          placeholder="مثال: 5123456789"
+          placeholder={isClash ? 'example@gmail.com' : 'مثال: 5123456789'}
           aria-invalid={Boolean(errors.playerId)}
-          className={`${INPUT_CLASS} ${
+          className={`${INPUT_CLASS} text-start ${
             errors.playerId ? 'border-red-500 focus:border-red-500' : 'border-zinc-700 focus:border-brand-500'
           }`}
         />
@@ -113,6 +153,23 @@ export default function PlayerDetailsStep({ initial, onNext }: PlayerDetailsStep
           }`}
         />
         {errors.whatsapp && <p className="text-sm text-red-400">{errors.whatsapp}</p>}
+      </div>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3.5 text-xs leading-6 text-zinc-400">
+        <p className="font-semibold text-zinc-200">شروط وتنبيهات الطلب:</p>
+        {isClash ? (
+          <ul className="mt-1 list-disc space-y-1 pr-4">
+            <li>تأكد من كتابة إيميل Supercell المرتبط بالقريه بشكل صحيح.</li>
+            <li>قد نحتاج للتواصل معك عبر واتساب لتأكيد رمز الدخول أثناء التنفيذ.</li>
+            <li>لا يمكن إلغاء الطلب أو استرداد المبلغ بعد بدء شحن الحساب.</li>
+          </ul>
+        ) : (
+          <ul className="mt-1 list-disc space-y-1 pr-4">
+            <li>تأكد من صحة ID اللاعب ورقم الواتساب قبل المتابعة؛ المتجر غير مسؤول عن خطأ الإدخال.</li>
+            <li>أدخل رقم واتساب فعّال للتواصل معك عند الحاجة.</li>
+            <li>لا يمكن إلغاء الطلب أو استرداد المبلغ بعد بدء التنفيذ.</li>
+          </ul>
+        )}
       </div>
 
       <button
