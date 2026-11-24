@@ -9,7 +9,7 @@ function phoneLoginEmail(phone: string): string {
   return `phone-${phone}@bekastore.local`;
 }
 
-const MAX_REQUESTS_PER_WINDOW = 20;
+const MAX_REQUESTS_PER_WINDOW = 10;
 const WINDOW_MINUTES = 10;
 
 function randomCode(): string {
@@ -107,7 +107,7 @@ export const startPhoneLogin = createServerFn({ method: 'POST' })
 
       return {
         ok: true as const,
-        requestId: row.id,
+        requestId: String(row.id),
         phone,
         code,
         expiresAt: row.expires_at,
@@ -167,16 +167,21 @@ async function findOrCreatePhoneUser(phone: string): Promise<string> {
 
 /** Polled by the customer's browser; once the store approves, returns a one-time sign-in token. */
 export const checkPhoneLogin = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
+  .inputValidator((input: unknown) =>
+    z.object({ requestId: z.union([z.string().min(1), z.number()]).transform(String) }).parse(input),
+  )
   .handler(async ({ data }): Promise<{ status: PhoneLoginStatus; tokenHash?: string }> => {
     const db = adminDb();
-    const { data: row, error } = await db
+
+    const { data: rows, error } = await db
       .from('phone_login_requests')
       .select('id, phone, status, expires_at')
-      .eq('id', data.requestId)
-      .maybeSingle();
+      .limit(100);
 
     if (error) throw new Error(`request_select: ${formatErr(error)}`);
+
+    const row = (rows ?? []).find((r) => String(r.id) === String(data.requestId));
+
     if (!row || row.status === 'used') return { status: 'expired' };
     if (row.status === 'rejected') return { status: 'rejected' };
     if (row.status === 'pending') {
