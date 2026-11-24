@@ -1,11 +1,22 @@
 import { useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowUpRight, CheckCircle2, X } from 'lucide-react';
+import { ArrowUpRight, CheckCircle2, Info, X } from 'lucide-react';
 import { buildWhatsAppUrl, formatPrice } from '@/lib/format';
 
 export type WithdrawMethod = 'ماي كاشي' | 'فوري' | 'أوكاش';
 
+export interface WithdrawRecord {
+  id: string;
+  amount: number;
+  method: WithdrawMethod;
+  accountName: string;
+  accountNumber: string;
+  status: 'قيد المراجعة';
+  createdAt: string;
+}
+
 interface WithdrawModalProps {
+  userId?: string;
   balance: number;
   userName?: string;
   onClose: () => void;
@@ -15,10 +26,21 @@ interface WithdrawModalProps {
 const WITHDRAW_METHODS: WithdrawMethod[] = ['ماي كاشي', 'فوري', 'أوكاش'];
 const MIN_WITHDRAW_AMOUNT = 1000;
 
+const METHOD_HINTS: Record<WithdrawMethod, string> = {
+  'ماي كاشي': 'تأكد من كتابة رقم حساب أو محفظة ماي كاشي والاسم المطابق لها بدقة.',
+  فوري: 'أدخل رقم الهاتف أو الحساب المرتبط بخدمة فوري والاسم الثلاثي لصاحب الحساب.',
+  أوكاش: 'تأكد من إدخال رقم محفظة أوكاش النشط واسم صاحب الحساب بشكل صحيح.',
+};
+
 const INPUT_CLASS =
   'h-12 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-base text-zinc-50 placeholder:text-zinc-500 outline-none transition-all duration-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/20';
 
+export function getWithdrawStorageKey(userId?: string) {
+  return `beka_withdrawals_${userId ?? 'guest'}`;
+}
+
 export default function WithdrawModal({
+  userId,
   balance,
   userName,
   onClose,
@@ -34,12 +56,7 @@ export default function WithdrawModal({
     accountName?: string;
     accountNumber?: string;
   }>({});
-  const [submittedSummary, setSubmittedSummary] = useState<{
-    amount: number;
-    method: WithdrawMethod;
-    accountName: string;
-    accountNumber: string;
-  } | null>(null);
+  const [submittedRecord, setSubmittedRecord] = useState<WithdrawRecord | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,17 +88,37 @@ export default function WithdrawModal({
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0 || !method) return;
 
-    setSubmittedSummary({
+    const record: WithdrawRecord = {
+      id: `WD-${Date.now().toString().slice(-6)}`,
       amount: numericAmount,
       method,
       accountName: trimmedName,
       accountNumber: trimmedAccount,
-    });
+      status: 'قيد المراجعة',
+      createdAt: new Date().toLocaleString('ar-SD', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    };
+
+    try {
+      const key = getWithdrawStorageKey(userId);
+      const existingRaw = window.localStorage.getItem(key);
+      const existing: WithdrawRecord[] = existingRaw ? (JSON.parse(existingRaw) as WithdrawRecord[]) : [];
+      window.localStorage.setItem(key, JSON.stringify([record, ...existing]));
+    } catch {
+      // تجاهل أخطاء التخزين المحلي في المتصفحات المقيدة
+    }
+
+    setSubmittedRecord(record);
     onSubmitted?.();
   }
 
-  const whatsappMessage = submittedSummary
-    ? `طلب سحب رصيد من المحفظة:\n- المبلغ: ${formatPrice(submittedSummary.amount)}\n- طريقة الاستلام: ${submittedSummary.method}\n- اسم صاحب الحساب: ${submittedSummary.accountName}\n- رقم الحساب/الهاتف: ${submittedSummary.accountNumber}`
+  const whatsappMessage = submittedRecord
+    ? `طلب سحب رصيد من المحفظة (${submittedRecord.id}):\n- المبلغ: ${formatPrice(submittedRecord.amount)}\n- طريقة الاستلام: ${submittedRecord.method}\n- اسم صاحب الحساب: ${submittedRecord.accountName}\n- رقم الحساب/الهاتف: ${submittedRecord.accountNumber}`
     : '';
 
   const modalContent = (
@@ -118,15 +155,17 @@ export default function WithdrawModal({
           </button>
         </div>
 
-        {submittedSummary ? (
+        {submittedRecord ? (
           <div className="mt-5 flex flex-col gap-4">
             <div className="flex flex-col items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
               <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-              <p className="text-sm font-bold text-emerald-200">تم تجهيز طلب السحب</p>
+              <p className="text-sm font-bold text-emerald-200">
+                تم تسجيل طلب السحب ({submittedRecord.id})
+              </p>
               <p className="text-xs leading-6 text-zinc-300">
-                المبلغ: <strong>{formatPrice(submittedSummary.amount)}</strong> عبر{' '}
-                <strong>{submittedSummary.method}</strong> لحساب{' '}
-                <strong>{submittedSummary.accountName}</strong> ({submittedSummary.accountNumber}).
+                المبلغ: <strong>{formatPrice(submittedRecord.amount)}</strong> عبر{' '}
+                <strong>{submittedRecord.method}</strong> لحساب{' '}
+                <strong>{submittedRecord.accountName}</strong> ({submittedRecord.accountNumber}).
               </p>
             </div>
 
@@ -189,6 +228,12 @@ export default function WithdrawModal({
                 ))}
               </select>
               {errors.method && <p className="text-xs text-red-400">{errors.method}</p>}
+              {method && (
+                <div className="mt-1 flex items-start gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/10 p-2.5 text-xs text-cyan-200">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+                  <span>{METHOD_HINTS[method]}</span>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col gap-1.5">
