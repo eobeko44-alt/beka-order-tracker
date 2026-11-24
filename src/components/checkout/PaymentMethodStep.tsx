@@ -1,132 +1,210 @@
-import { useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Wallet } from 'lucide-react';
-import type { PaymentMethod } from '@/types';
-import { formatPrice } from '@/lib/format';
-import { WALLET_METHOD_ID } from '@/lib/orders';
+import { useState, type FormEvent } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import {
+  isValidPlayerId,
+  isValidWhatsapp,
+  normalizePlayerId,
+  normalizeWhatsapp,
+} from '@/lib/orders';
 
-interface PaymentMethodStepProps {
-  methods: PaymentMethod[];
-  selectedId: string | null;
-  onBack: () => void;
-  onNext: (methodId: string) => void;
-  /** Wallet balance of the signed-in user; null for guests. */
-  walletBalance: number | null;
-  price: number;
+export interface PlayerInfo {
+  customerName: string;
+  playerId: string;
+  whatsapp: string;
 }
 
-export default function PaymentMethodStep({ methods, selectedId, onBack, onNext, walletBalance, price }: PaymentMethodStepProps) {
-  const [choice, setChoice] = useState<string | null>(selectedId ?? methods[0]?.id ?? null);
+interface PlayerDetailsStepProps {
+  initial: PlayerInfo | null;
+  onNext: (info: PlayerInfo) => void;
+  gameName?: string;
+  gameSlug?: string;
+}
 
-  if (methods.length === 0) {
-    return (
-      <div className="flex flex-col gap-4">
-        <p className="text-sm text-red-400">طرق الدفع مش متاحة دلوقتي، جرّب تاني بعد شوية.</p>
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center justify-center gap-2 rounded-xl border border-zinc-700 px-5 py-3 text-sm font-semibold text-zinc-200"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          السابق
-        </button>
-      </div>
-    );
+const INPUT_CLASS =
+  'h-12 w-full rounded-xl border bg-zinc-950 px-4 text-base text-zinc-50 placeholder:text-zinc-600 outline-none transition-all duration-200 focus:ring-4 focus:ring-brand-500/20';
+
+function isClashOfClans(gameName?: string, gameSlug?: string): boolean {
+  const combined = `${gameName ?? ''} ${gameSlug ?? ''}`.toLowerCase();
+  return (
+    combined.includes('clash') ||
+    combined.includes('كلاش') ||
+    combined.includes('كلاشن')
+  );
+}
+
+function isVisaCard(gameName?: string, gameSlug?: string): boolean {
+  const combined = `${gameName ?? ''} ${gameSlug ?? ''}`.toLowerCase();
+  return combined.includes('visa') || combined.includes('فيزا');
+}
+
+function isValidSupercellEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+export default function PlayerDetailsStep({
+  initial,
+  onNext,
+  gameName,
+  gameSlug,
+}: PlayerDetailsStepProps) {
+  const isClash = isClashOfClans(gameName, gameSlug);
+  const isVisa = !isClash && isVisaCard(gameName, gameSlug);
+
+  const [customerName, setCustomerName] = useState(initial?.customerName ?? '');
+  const [playerId, setPlayerId] = useState(
+    initial?.playerId && initial.playerId !== 'VISA-CARD' ? initial.playerId : ''
+  );
+  const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ?? '');
+  const [errors, setErrors] = useState<{ customerName?: string; playerId?: string; whatsapp?: string }>({});
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedName = customerName.trim();
+    const normalizedPhone = normalizeWhatsapp(whatsapp);
+
+    let normalizedIdentifier = '';
+    if (isVisa) {
+      normalizedIdentifier = 'VISA-CARD';
+    } else if (isClash) {
+      normalizedIdentifier = playerId.trim().toLowerCase();
+    } else {
+      normalizedIdentifier = normalizePlayerId(playerId);
+    }
+
+    const nextErrors: typeof errors = {};
+    if (normalizedName.length < 2 || normalizedName.length > 80) {
+      nextErrors.customerName = 'اكتب اسمك (من حرفين لحد 80 حرف)';
+    }
+
+    if (!isVisa) {
+      if (isClash) {
+        if (!isValidSupercellEmail(normalizedIdentifier)) {
+          nextErrors.playerId = 'أدخل إيميل سوبرسل صحيح، مثال: name@gmail.com';
+        }
+      } else if (!isValidPlayerId(normalizedIdentifier)) {
+        nextErrors.playerId = 'أدخل ID اللاعب (من 3 إلى 50 حرفاً أو رقماً)';
+      }
+    }
+
+    if (!isValidWhatsapp(normalizedPhone)) {
+      nextErrors.whatsapp = 'أدخل رقم واتساب صحيح مع كود الدولة، مثال: 249912345678';
+    }
+
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
+    onNext({
+      customerName: normalizedName,
+      playerId: normalizedIdentifier,
+      whatsapp: normalizedPhone,
+    });
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       <div>
-        <h2 className="text-lg font-bold text-zinc-50">طريقة الدفع</h2>
-        <p className="mt-1 text-sm text-zinc-400">اختار الطريقة اللي هتحوّل بيها المبلغ</p>
+        <h2 className="text-lg font-bold text-zinc-50">بياناتك</h2>
+        <p className="mt-1 text-sm text-zinc-400">
+          {isVisa
+            ? 'اكتب اسمك ورقم واتساب للتواصل معك'
+            : isClash
+              ? 'اكتب اسمك وإيميل سوبرسل ورقم واتساب للتواصل معك'
+              : 'اكتب اسمك وID اللاعب ورقم واتساب للتواصل معك'}
+        </p>
       </div>
 
-      <div role="radiogroup" aria-label="طرق الدفع" className="flex flex-col gap-3">
-        {walletBalance !== null && (
-          <button
-            type="button"
-            role="radio"
-            aria-checked={choice === WALLET_METHOD_ID}
-            disabled={walletBalance < price}
-            onClick={() => setChoice(WALLET_METHOD_ID)}
-            className={`flex items-center justify-between rounded-xl border p-4 text-start transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${
-              choice === WALLET_METHOD_ID
-                ? 'border-brand-500 bg-brand-500/10 shadow-lg shadow-brand-600/10'
-                : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-600'
+      <div className="flex flex-col gap-2">
+        <label htmlFor="customer-name" className="text-sm font-semibold text-zinc-200">
+          الاسم
+        </label>
+        <input
+          id="customer-name"
+          type="text"
+          autoComplete="name"
+          value={customerName}
+          onChange={(event) => setCustomerName(event.target.value)}
+          placeholder="اسمك الكامل"
+          aria-invalid={Boolean(errors.customerName)}
+          className={`${INPUT_CLASS} ${
+            errors.customerName ? 'border-red-500 focus:border-red-500' : 'border-zinc-700 focus:border-brand-500'
+          }`}
+        />
+        {errors.customerName && <p className="text-sm text-red-400">{errors.customerName}</p>}
+      </div>
+
+      {!isVisa && (
+        <div className="flex flex-col gap-2">
+          <label htmlFor="player-id" className="text-sm font-semibold text-zinc-200">
+            {isClash ? 'إيميل سوبرسل' : 'ID اللاعب'}
+          </label>
+          <input
+            id="player-id"
+            type={isClash ? 'email' : 'text'}
+            dir="ltr"
+            inputMode={isClash ? 'email' : 'numeric'}
+            autoComplete={isClash ? 'email' : undefined}
+            value={playerId}
+            onChange={(event) => setPlayerId(event.target.value)}
+            placeholder={isClash ? 'example@gmail.com' : 'مثال: 5123456789'}
+            aria-invalid={Boolean(errors.playerId)}
+            className={`${INPUT_CLASS} text-start ${
+              errors.playerId ? 'border-red-500 focus:border-red-500' : 'border-zinc-700 focus:border-brand-500'
             }`}
-          >
-            <span className="flex flex-col">
-              <span className="font-semibold text-zinc-50">الدفع من رصيد المحفظة</span>
-              <span className="text-xs text-zinc-400">
-                رصيدك: <span className="text-brand-300">{formatPrice(walletBalance)}</span>
-                {walletBalance < price && ' — الرصيد ما بكفي، اشحن محفظتك الأول'}
-              </span>
-            </span>
-            <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${choice === WALLET_METHOD_ID ? 'border-brand-500 bg-brand-500' : 'border-zinc-700'}`}>
-              {choice === WALLET_METHOD_ID && <Check className="h-3 w-3 stroke-[3] text-white" />}
-            </span>
-          </button>
-        )}
-        {methods.map((method) => {
-          const isSelected = choice === method.id;
-          return (
-            <button
-              key={method.id}
-              type="button"
-              role="radio"
-              aria-checked={isSelected}
-              onClick={() => setChoice(method.id)}
-              className={`flex items-center justify-between rounded-xl border p-4 text-start transition-all duration-200 ${
-                isSelected
-                  ? 'border-brand-500 bg-brand-500/10 shadow-lg shadow-brand-600/10'
-                  : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-600'
-              }`}
-            >
-              <span className="flex items-center gap-3">
-                <span
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-                    isSelected ? 'bg-brand-600 text-white' : 'bg-zinc-800 text-zinc-300'
-                  }`}
-                >
-                  <Wallet className="h-5 w-5" />
-                </span>
-                <span className="flex flex-col">
-                  <span className="font-semibold text-zinc-50">{method.name_ar}</span>
-                  <span className="text-xs text-zinc-400">
-                    {method.account_label_ar}: <span dir="ltr" className="text-brand-300">{method.account_value}</span>
-                  </span>
-                </span>
-              </span>
-              <span
-                className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                  isSelected ? 'border-brand-500 bg-brand-500' : 'border-zinc-700'
-                }`}
-              >
-                {isSelected && <Check className="h-3 w-3 stroke-[3] text-white" />}
-              </span>
-            </button>
-          );
-        })}
+          />
+          {errors.playerId && <p className="text-sm text-red-400">{errors.playerId}</p>}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="whatsapp" className="text-sm font-semibold text-zinc-200">
+          رقم الواتساب
+        </label>
+        <input
+          id="whatsapp"
+          type="tel"
+          dir="ltr"
+          inputMode="tel"
+          value={whatsapp}
+          onChange={(event) => setWhatsapp(event.target.value)}
+          placeholder="249912345678"
+          aria-invalid={Boolean(errors.whatsapp)}
+          className={`${INPUT_CLASS} text-start ${
+            errors.whatsapp ? 'border-red-500 focus:border-red-500' : 'border-zinc-700 focus:border-brand-500'
+          }`}
+        />
+        {errors.whatsapp && <p className="text-sm text-red-400">{errors.whatsapp}</p>}
       </div>
 
-      <div className="flex items-center justify-between pt-2">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-5 py-3 text-sm font-semibold text-zinc-300 transition-all hover:border-zinc-700 hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          السابق
-        </button>
-        <button
-          type="button"
-          disabled={!choice}
-          onClick={() => choice && onNext(choice)}
-          className="flex items-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-brand-500 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
-        >
-          متابعة
-          <ArrowRight className="h-4 w-4" />
-        </button>
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3.5 text-xs leading-6 text-zinc-400">
+        <p className="font-semibold text-zinc-200">شروط وتنبيهات الطلب:</p>
+        {isVisa ? (
+          <ul className="mt-1 list-disc space-y-1 pr-4">
+            <li>تأكد من كتابة اسمك ورقم واتساب بشكل صحيح لاستلام تفاصيل البطاقة.</li>
+            <li>سيتم التواصل معك عبر واتساب بعد تأكيد الدفع لتسليم بيانات الفيزا.</li>
+            <li>لا يمكن إلغاء الطلب أو استرداد المبلغ بعد إصدار أو تسليم البطاقة.</li>
+          </ul>
+        ) : isClash ? (
+          <ul className="mt-1 list-disc space-y-1 pr-4">
+            <li>تأكد من كتابة إيميل Supercell المرتبط بالقريه بشكل صحيح.</li>
+            <li>قد نحتاج للتواصل معك عبر واتساب لتأكيد رمز الدخول أثناء التنفيذ.</li>
+            <li>لا يمكن إلغاء الطلب أو استرداد المبلغ بعد بدء شحن الحساب.</li>
+          </ul>
+        ) : (
+          <ul className="mt-1 list-disc space-y-1 pr-4">
+            <li>تأكد من صحة ID اللاعب ورقم الواتساب قبل المتابعة؛ المتجر غير مسؤول عن خطأ الإدخال.</li>
+            <li>أدخل رقم واتساب فعّال للتواصل معك عند الحاجة.</li>
+            <li>لا يمكن إلغاء الطلب أو استرداد المبلغ بعد بدء التنفيذ.</li>
+          </ul>
+        )}
       </div>
-    </div>
+
+      <button
+        type="submit"
+        className="flex h-12 items-center justify-center gap-2 rounded-xl bg-brand-600 text-sm font-bold text-white transition-all duration-200 hover:bg-brand-500 active:scale-[0.99]"
+      >
+        متابعة
+        <ArrowLeft className="h-4 w-4" />
+      </button>
+    </form>
   );
 }
