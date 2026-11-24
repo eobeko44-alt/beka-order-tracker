@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
+import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { normalizeLocalPhone } from '@/lib/phone';
 
@@ -17,59 +18,100 @@ function randomCode(): string {
   return String((values[0] ?? 0) % 1_000_000).padStart(6, '0');
 }
 
-async function adminDb() {
-  const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-  return supabaseAdmin;
+function getEnv(name: string): string {
+  const val = process.env[name];
+  return typeof val === 'string' ? val.trim() : '';
+}
+
+function adminDb() {
+  const url =
+    getEnv('SUPABASE_URL') ||
+    getEnv('VITE_SUPABASE_URL') ||
+    getEnv('PUBLIC_SUPABASE_URL');
+  const serviceKey =
+    getEnv('SUPABASE_SERVICE_ROLE_KEY') ||
+    getEnv('SUPABASE_SECRET_KEY') ||
+    getEnv('SERVICE_ROLE_KEY');
+
+  if (!url) {
+    throw new Error('missing_supabase_url');
+  }
+  if (!serviceKey) {
+    throw new Error('missing_service_role_key');
+  }
+
+  return createClient(url, serviceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
 }
 
 /** Creates a pending phone sign-in request and returns the code the customer sends on WhatsApp. */
 export const startPhoneLogin = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => z.object({ phone: z.string().max(30) }).parse(input))
   .handler(async ({ data }) => {
-    const phone = normalizeLocalPhone(data.phone);
-    if (!phone) {
-      return { ok: false as const, error: 'invalid_phone' };
+    try {
+      const phone = normalizeLocalPhone(data.phone);
+      if (!phone) {
+        return { ok: false as const, error: 'invalid_phone' };
+      }
+
+      const db = adminDb();
+
+      const since = new Date(Date.now() - WINDOW_MINUTES * 60_000).toISOString();
+      const { count, error: counterError } = await db
+        .from('phone_login_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('phone', phone)
+        .gte('created_at', since);
+
+      if (counterError) {
+        return {
+          ok: false as const,
+          error: `counter_error: ${counterError.message || counterError.code || 'unknown'}`,
+        };
+      }
+
+      if ((count ?? 0) >= MAX_REQUESTS_PER_WINDOW) {
+        return { ok: false as const, error: 'too_many_requests' };
+      }
+
+      const code = randomCode();
+      const { data: row, error } = await db
+        .from('phone_login_requests')
+        .insert({ phone, code })
+        .select('id, expires_at')
+        .single();
+
+      if (error || !row) {
+        return {
+          ok: false as const,
+          error: `insert_error: ${error?.message || error?.code || 'insert_failed'}`,
+        };
+      }
+
+      return {
+        ok: true as const,
+        requestId: row.id,
+        phone,
+        code,
+        expiresAt: row.expires_at,
+      };
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : JSON.stringify(err);
+      return { ok: false as const, error: `server_error: ${msg}` };
     }
-
-    const db = await adminDb();
-
-    const since = new Date(Date.now() - WINDOW_MINUTES * 60_000).toISOString();
-    const { count, error: counterError } = await db
-      .from('phone_login_requests')
-      .select('id', { count: 'exact', head: true })
-      .eq('phone', phone)
-      .gte('created_at', since);
-
-    if (counterError) {
-      return { ok: false as const, error: `counter_error: ${counterError.message}` };
-    }
-
-    if ((count ?? 0) >= MAX_REQUESTS_PER_WINDOW) {
-      return { ok: false as const, error: 'too_many_requests' };
-    }
-
-    const code = randomCode();
-    const { data: row, error } = await db
-      .from('phone_login_requests')
-      .insert({ phone, code })
-      .select('id, expires_at')
-      .single();
-
-    if (error || !row) {
-      return { ok: false as const, error: `insert_error: ${error?.message ?? 'insert_failed'}` };
-    }
-
-    return {
-      ok: true as const,
-      requestId: row.id,
-      phone,
-      code,
-      expiresAt: row.expires_at,
-    };
   });
 
 async function findOrCreatePhoneUser(phone: string): Promise<string> {
-  const db = await adminDb();
+  const db = adminDb();
   const email = phoneLoginEmail(phone);
 
   const { data: profile, error: profileError } = await db
@@ -86,7 +128,6 @@ async function findOrCreatePhoneUser(phone: string): Promise<string> {
     const { data: existing, error } = await db.auth.admin.getUserById(profile.id);
     if (error) throw new Error(error.message);
     if (existing.user?.email) return existing.user.email;
-    // Older phone-only accounts get the internal address so they can sign in this way.
     const { error: updateError } = await db.auth.admin.updateUserById(profile.id, {
       email,
       email_confirm: true,
@@ -121,7 +162,7 @@ async function findOrCreatePhoneUser(phone: string): Promise<string> {
 export const checkPhoneLogin = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => z.object({ requestId: z.string().uuid() }).parse(input))
   .handler(async ({ data }): Promise<{ status: PhoneLoginStatus; tokenHash?: string }> => {
-    const db = await adminDb();
+    const db = adminDb();
     const { data: row, error } = await db
       .from('phone_login_requests')
       .select('id, phone, status, expires_at')
@@ -135,7 +176,6 @@ export const checkPhoneLogin = createServerFn({ method: 'POST' })
       return { status: new Date(row.expires_at).getTime() <= Date.now() ? 'expired' : 'pending' };
     }
 
-    // Approved: claim it once so the same approval cannot sign in twice.
     const { data: claimed, error: claimError } = await db
       .from('phone_login_requests')
       .update({ status: 'used' })
