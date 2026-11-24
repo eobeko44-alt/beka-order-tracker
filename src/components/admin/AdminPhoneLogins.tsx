@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, Loader2, MessageCircle, Phone, XCircle } from 'lucide-react';
 import { AdminLoading, AdminNotice } from '@/components/admin/AdminPaymentMethods';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import { describeAuthError } from '@/lib/authErrors';
 import { formatDateTime } from '@/lib/wallet';
 import {
   fetchPhoneLoginRequests,
@@ -45,7 +44,7 @@ export default function AdminPhoneLogins() {
   }, []);
 
   const list = live ?? data;
-  if (error && !list) return <AdminNotice text="تعذر تحميل طلبات الدخول، حاول مرة أخرى." onRetry={reload} />;
+  if (error && !list) return <AdminNotice text="تعذر تحميل طلبات الدخول. حاول مرة أخرى." onRetry={reload} />;
   if (!list) return <AdminLoading />;
 
   const now = Date.now();
@@ -56,15 +55,15 @@ export default function AdminPhoneLogins() {
     <div className="flex flex-col gap-6">
       <p className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4 text-sm leading-relaxed text-zinc-300">
         لما عميل يرسل ليك رسالة دخول على واتساب، قارن <strong className="text-zinc-100">الرقم اللي الرسالة جات منه</strong> و
-        <strong className="text-zinc-100">الرمز</strong> مع الطلب هنا. وافق فقط لو الاتنين متطابقين.
+        <strong className="text-zinc-100">الرمز</strong> مع الطلب هنا، وافق فقط لو الاتنين متطابقين.
       </p>
 
       {open.length === 0 ? (
-        <p className="py-6 text-center text-sm text-zinc-400">ما في طلبات دخول جديدة الآن</p>
+        <p className="py-6 text-center text-sm text-zinc-400">ما في طلبات دخول جديدة الآن.</p>
       ) : (
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-glow-pulse" />
+            <span className="h-2 w-2 rounded-full bg-amber-400 animate-glow-pulse" />
             <h3 className="text-sm font-bold text-zinc-300">بانتظار التأكيد ({open.length})</h3>
           </div>
           <ul className="flex flex-col gap-4">
@@ -103,7 +102,7 @@ function RequestRow({ item, onReviewed }: { item: PhoneLoginRequest; onReviewed:
       await reviewPhoneLogin(item.id, approve);
       onReviewed();
     } catch (err) {
-      setMessage(describeAuthError(err));
+      setMessage(err instanceof Error ? err.message : JSON.stringify(err));
       setBusy(null);
     }
   }
@@ -134,16 +133,16 @@ function RequestRow({ item, onReviewed }: { item: PhoneLoginRequest; onReviewed:
             type="button"
             onClick={() => void handleReview(true)}
             disabled={busy !== null}
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-500 disabled:opacity-50"
           >
             {busy === 'approve' ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-            موافقة — دخول العميل
+            موافقة – دخول العميل
           </button>
           <button
             type="button"
             onClick={() => void handleReview(false)}
             disabled={busy !== null}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/50 px-4 py-2.5 text-sm font-bold text-red-300 transition-colors hover:bg-red-500/10 disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-500/30 px-4 py-2.5 text-sm font-bold text-red-300 transition hover:bg-red-500/10 disabled:opacity-50"
           >
             {busy === 'reject' ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
             رفض
@@ -152,7 +151,7 @@ function RequestRow({ item, onReviewed }: { item: PhoneLoginRequest; onReviewed:
             href={chatUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-bold text-zinc-200 transition-colors hover:border-brand-500"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition hover:border-zinc-500"
           >
             <MessageCircle className="h-4 w-4" />
             محادثة العميل
