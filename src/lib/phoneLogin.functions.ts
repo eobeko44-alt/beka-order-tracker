@@ -80,20 +80,14 @@ export const startPhoneLogin = createServerFn({ method: 'POST' })
       const db = adminDb();
 
       const since = new Date(Date.now() - WINDOW_MINUTES * 60_000).toISOString();
-      const { count, error: counterError } = await db
+      const { data: recentRows } = await db
         .from('phone_login_requests')
-        .select('id', { count: 'exact', head: true })
+        .select('id')
         .eq('phone', phone)
-        .gte('created_at', since);
+        .gte('created_at', since)
+        .limit(MAX_REQUESTS_PER_WINDOW + 1);
 
-      if (counterError) {
-        return {
-          ok: false as const,
-          error: `counter_error: ${formatErr(counterError)}`,
-        };
-      }
-
-      if ((count ?? 0) >= MAX_REQUESTS_PER_WINDOW) {
+      if ((recentRows?.length ?? 0) >= MAX_REQUESTS_PER_WINDOW) {
         return { ok: false as const, error: 'too_many_requests' };
       }
 
