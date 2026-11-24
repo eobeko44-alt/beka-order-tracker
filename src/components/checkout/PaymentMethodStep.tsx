@@ -185,7 +185,7 @@ export default function PlayerDetailsStep({
           </ul>
         ) : isClash ? (
           <ul className="mt-1 list-disc space-y-1 pr-4">
-            <li>تأكد من كتابة إيميل Supercell المرتبط بالقريه بشكل صحيح.</li>
+            <li>تأكد من كتابة إيميل Supercell المرتبط بالقرية بشكل صحيح.</li>
             <li>قد نحتاج للتواصل معك عبر واتساب لتأكيد رمز الدخول أثناء التنفيذ.</li>
             <li>لا يمكن إلغاء الطلب أو استرداد المبلغ بعد بدء شحن الحساب.</li>
           </ul>
